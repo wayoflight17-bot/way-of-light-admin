@@ -1,0 +1,1657 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portal Admin Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f1f5f9; min-height: 100vh;}
+        .hidden-view { display: none !important; }
+        .nav-item.active { background: #e0e7ff; color: #4f46e5; border-right: 4px solid #4f46e5; }
+        
+        /* Security: disable text selection on sensitive areas */
+        .secure-no-select { user-select: none; -webkit-user-select: none; }
+
+        /* Student picker chip styles */
+        .student-chip {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 4px 10px; background: #eef2ff; border: 1px solid #c7d2fe;
+            border-radius: 999px; font-size: 12px; font-weight: 700; color: #4338ca;
+            cursor: pointer; transition: all 0.15s;
+        }
+        .student-chip:hover { background: #c7d2fe; }
+        .student-chip.selected { background: #4f46e5; color: #fff; border-color: #4f46e5; }
+        .student-chip .remove { margin-left: 2px; opacity: 0.6; font-size: 14px; line-height: 1; }
+
+        /* Audit log */
+        .audit-entry { border-left: 3px solid #e0e7ff; padding-left: 12px; }
+        .audit-entry.danger { border-left-color: #fca5a5; }
+        .audit-entry.success { border-left-color: #6ee7b7; }
+
+        /* Login attempt bar */
+        #login-attempts-bar { transition: width 0.4s ease; }
+
+        /* Tooltip */
+        [data-tip] { position: relative; }
+        [data-tip]:hover::after {
+            content: attr(data-tip);
+            position: absolute; bottom: calc(100% + 6px); left: 50%; transform: translateX(-50%);
+            background: #1e293b; color: #fff; font-size: 11px; font-weight: 600;
+            padding: 4px 10px; border-radius: 6px; white-space: nowrap; z-index: 100; pointer-events: none;
+        }
+
+        /* Table row hover */
+        #student-table-body tr { transition: background 0.1s; }
+        
+        /* Quiz card highlight for draw tests */
+        .draw-test-card { background: linear-gradient(135deg, #fff7ed, #fef3c7) !important; border-color: #fbbf24 !important; }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+
+        /* Badge pulse for live counts */
+        @keyframes pulse-badge { 0%,100% { opacity: 1; } 50% { opacity: 0.6; } }
+        .live-badge { animation: pulse-badge 2s infinite; }
+    </style>
+</head>
+<body class="text-slate-800">
+
+    <!-- Login Overlay -->
+    <div id="admin-login-overlay" class="fixed inset-0 bg-slate-900 z-50 flex flex-col items-center justify-center p-4">
+        <div class="w-full max-w-sm bg-white p-8 rounded-3xl shadow-2xl text-center">
+            <div class="w-16 h-16 bg-indigo-100 text-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+            </div>
+            <h2 class="text-2xl font-black mb-2">Admin Portal</h2>
+            <p class="text-slate-500 text-sm mb-6">Sign in with Admin Credentials</p>
+
+            <!-- Brute-force indicator -->
+            <div id="login-lockout-bar" class="hidden mb-4">
+                <div class="text-xs font-bold text-amber-700 mb-1 text-left">Failed attempts: <span id="attempt-count">0</span>/5</div>
+                <div class="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                    <div id="login-attempts-bar" class="h-2 bg-amber-400 rounded-full w-0"></div>
+                </div>
+            </div>
+            
+            <div class="space-y-4 mb-4">
+                <input type="email" id="admin-email" placeholder="Admin Email" autocomplete="off" spellcheck="false"
+                    class="w-full px-4 py-3 rounded-xl bg-slate-50 border-2 border-slate-200 focus:border-indigo-500 outline-none font-bold">
+                <div class="relative">
+                    <input type="password" id="admin-pwd" placeholder="Admin Password"
+                        class="w-full px-4 py-3 rounded-xl bg-slate-50 border-2 border-slate-200 focus:border-indigo-500 outline-none font-bold pr-12"
+                        onkeydown="if(event.key === 'Enter') window.loginAdmin()">
+                    <button type="button" onclick="window.togglePwdVisibility()" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 text-sm font-bold px-1" id="pwd-toggle-btn">👁</button>
+                </div>
+            </div>
+
+            <button onclick="window.loginAdmin()" id="login-btn" class="w-full bg-indigo-600 text-white py-3 rounded-xl font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200">Authenticate</button>
+            <div id="login-error" class="hidden text-rose-500 text-xs font-bold mt-3"></div>
+            <div id="lockout-timer" class="hidden text-rose-600 text-xs font-bold mt-3"></div>
+        </div>
+    </div>
+
+    <!-- Main App Layout -->
+    <div id="admin-app" class="hidden-view flex h-screen overflow-hidden">
+        
+        <!-- Sidebar -->
+        <aside class="w-64 bg-white border-r border-slate-200 flex flex-col shrink-0">
+            <div class="h-16 flex items-center px-6 border-b border-slate-200 gap-3">
+                <img id="sidebar-logo" src="" class="hidden w-8 h-8 rounded-lg object-cover">
+                <h1 class="font-black text-lg tracking-tight text-indigo-600" id="sidebar-title">Admin Control</h1>
+            </div>
+            <nav class="flex-1 py-4 space-y-1">
+                <a href="#" onclick="window.switchTab('dashboard')" id="nav-dashboard" class="nav-item active flex items-center gap-3 px-6 py-3 text-sm font-bold text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+                    Dashboard
+                </a>
+                <a href="#" onclick="window.switchTab('students')" id="nav-students" class="nav-item flex items-center gap-3 px-6 py-3 text-sm font-bold text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                    Student Records
+                    <span id="nav-student-count" class="ml-auto bg-indigo-100 text-indigo-700 text-[10px] font-black px-2 py-0.5 rounded-full live-badge">0</span>
+                </a>
+                <a href="#" onclick="window.switchTab('quizzes')" id="nav-quizzes" class="nav-item flex items-center gap-3 px-6 py-3 text-sm font-bold text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/></svg>
+                    Test Builder
+                </a>
+                <a href="#" onclick="window.switchTab('results')" id="nav-results" class="nav-item flex items-center gap-3 px-6 py-3 text-sm font-bold text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+                    Results & Analytics
+                </a>
+                <a href="#" onclick="window.switchTab('seasons')" id="nav-seasons" class="nav-item flex items-center gap-3 px-6 py-3 text-sm font-bold text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/></svg>
+                    Seasons Management
+                </a>
+                <a href="#" onclick="window.switchTab('audit')" id="nav-audit" class="nav-item flex items-center gap-3 px-6 py-3 text-sm font-bold text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+                    Audit Log
+                </a>
+                <a href="#" onclick="window.switchTab('settings')" id="nav-settings" class="nav-item flex items-center gap-3 px-6 py-3 text-sm font-bold text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><circle cx="12" cy="12" r="3"/></svg>
+                    Platform Settings
+                </a>
+            </nav>
+            <div class="p-4 border-t border-slate-200 space-y-2">
+                <div class="text-xs font-bold text-slate-400 truncate px-1" id="logged-in-as">–</div>
+                <button onclick="window.logoutAdmin()" class="w-full px-4 py-2 bg-slate-100 text-slate-700 text-sm font-bold rounded-xl hover:bg-slate-200 transition-colors">🔒 Lock Session</button>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="flex-1 overflow-y-auto p-8 relative">
+            
+            <!-- Dashboard View -->
+            <div id="view-dashboard" class="space-y-6">
+                <div class="flex justify-between items-end">
+                    <div>
+                        <h2 class="text-3xl font-black text-slate-900">Platform Overview</h2>
+                        <p class="text-slate-500 text-sm mt-1">Real-time sync — Last updated: <span id="last-sync-time">–</span></p>
+                    </div>
+                    <button onclick="window.resetAllExams()" class="px-4 py-2 bg-rose-50 border border-rose-200 text-rose-600 font-bold rounded-xl hover:bg-rose-600 hover:text-white transition-all text-sm">
+                        ⚠️ Reset All Exam Records
+                    </button>
+                </div>
+
+                <!-- Stats Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                    <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                        <div class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Total Students</div>
+                        <div class="text-4xl font-black text-indigo-600" id="stat-students">0</div>
+                    </div>
+                    <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                        <div class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Total Exams Taken</div>
+                        <div class="text-4xl font-black text-emerald-500" id="stat-tests">0</div>
+                    </div>
+                    <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                        <div class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Average Score</div>
+                        <div class="text-4xl font-black text-amber-500" id="stat-avg">0</div>
+                    </div>
+                    <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                        <div class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Active Tests</div>
+                        <div class="text-4xl font-black text-violet-500" id="stat-active-tests">0</div>
+                    </div>
+                </div>
+
+                <!-- Quick Leaderboard + Recent Activity -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                        <h3 class="font-black text-lg mb-4 text-slate-800">🏆 Top Students (All Time)</h3>
+                        <div id="dash-leaderboard" class="space-y-3">
+                            <div class="text-slate-400 text-sm font-bold text-center py-4">No data yet.</div>
+                        </div>
+                    </div>
+                    <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                        <h3 class="font-black text-lg mb-4 text-slate-800">⚡ Recent Exam Submissions</h3>
+                        <div id="dash-recent" class="space-y-3">
+                            <div class="text-slate-400 text-sm font-bold text-center py-4">No submissions yet.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Students View -->
+            <div id="view-students" class="hidden-view space-y-6">
+                <div class="flex justify-between items-center flex-wrap gap-4">
+                    <h2 class="text-3xl font-black text-slate-900">Student Records</h2>
+                    <div class="flex gap-3">
+                        <input type="text" id="student-search" oninput="window.filterStudents()" placeholder="Search by name or ID..." class="px-4 py-2 rounded-xl bg-white border border-slate-200 font-bold text-sm outline-none focus:border-indigo-500 w-56">
+                        <button onclick="window.exportStudentsCSV()" class="px-4 py-2 bg-emerald-50 border border-emerald-200 text-emerald-700 font-bold rounded-xl text-sm hover:bg-emerald-100 transition-colors" data-tip="Export as CSV">📤 Export CSV</button>
+                    </div>
+                </div>
+                <div class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+                    <table class="w-full text-left">
+                        <thead class="bg-slate-50 border-b border-slate-200">
+                            <tr>
+                                <th class="px-6 py-4 text-xs font-black uppercase tracking-widest text-slate-500">Student & Enrollment ID</th>
+                                <th class="px-6 py-4 text-xs font-black uppercase tracking-widest text-slate-500">Contact</th>
+                                <th class="px-6 py-4 text-xs font-black uppercase tracking-widest text-slate-500">Tests / XP</th>
+                                <th class="px-6 py-4 text-xs font-black uppercase tracking-widest text-slate-500">Joined</th>
+                                <th class="px-6 py-4 text-xs font-black uppercase tracking-widest text-slate-500 text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="student-table-body" class="divide-y divide-slate-100"></tbody>
+                    </table>
+                    <div id="student-empty" class="hidden p-8 text-center text-slate-400 font-bold">No students found.</div>
+                </div>
+            </div>
+
+            <!-- Results & Analytics View -->
+            <div id="view-results" class="hidden-view space-y-6">
+                <h2 class="text-3xl font-black text-slate-900">Results & Analytics</h2>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                        <div class="text-xs font-black uppercase text-slate-400 mb-1">Pass Rate</div>
+                        <div class="text-4xl font-black text-emerald-500" id="ana-pass-rate">–</div>
+                    </div>
+                    <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                        <div class="text-xs font-black uppercase text-slate-400 mb-1">Highest Score Ever</div>
+                        <div class="text-4xl font-black text-indigo-600" id="ana-highest">–</div>
+                    </div>
+                    <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                        <div class="text-xs font-black uppercase text-slate-400 mb-1">Total XP Distributed</div>
+                        <div class="text-4xl font-black text-amber-500" id="ana-total-xp">–</div>
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="font-black text-lg text-slate-800">Per-Test Performance Breakdown</h3>
+                    </div>
+                    <div id="results-table" class="space-y-3"></div>
+                </div>
+            </div>
+
+            <!-- Quizzes View -->
+            <div id="view-quizzes" class="hidden-view space-y-6">
+                <div class="flex justify-between items-center">
+                    <h2 class="text-3xl font-black text-slate-900">Test Builder</h2>
+                    <button onclick="window.createNewQuiz()" class="px-4 py-2 bg-indigo-600 text-white font-bold rounded-xl shadow-md hover:bg-indigo-700 transition-colors">+ New Test Module</button>
+                </div>
+                <div class="flex gap-3 flex-wrap">
+                    <button onclick="window.filterQuizzes('all')" id="qf-all" class="px-4 py-2 bg-indigo-600 text-white font-bold rounded-xl text-sm">All</button>
+                    <button onclick="window.filterQuizzes('open')" id="qf-open" class="px-4 py-2 bg-slate-100 text-slate-700 font-bold rounded-xl text-sm hover:bg-slate-200">Open Tests</button>
+                    <button onclick="window.filterQuizzes('draw')" id="qf-draw" class="px-4 py-2 bg-slate-100 text-slate-700 font-bold rounded-xl text-sm hover:bg-slate-200">Draw Tests</button>
+                </div>
+                <div id="quiz-list" class="grid grid-cols-1 md:grid-cols-2 gap-6"></div>
+            </div>
+
+            <!-- Seasons View -->
+            <div id="view-seasons" class="hidden-view space-y-6 max-w-4xl">
+                <h2 class="text-3xl font-black text-slate-900">Seasons Management</h2>
+                <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+                    <h3 class="font-black text-lg text-slate-800 mb-4">Create New Season</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-xs font-black text-slate-500 uppercase mb-1">Season Name</label>
+                            <input type="text" id="season-name" class="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 font-bold outline-none" placeholder="e.g. Winter 2026">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-black text-slate-500 uppercase mb-1">Start Date</label>
+                            <input type="date" id="season-start" class="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 font-bold outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-black text-slate-500 uppercase mb-1">End Date</label>
+                            <input type="date" id="season-end" class="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 font-bold outline-none">
+                        </div>
+                    </div>
+                    <button onclick="window.createSeason()" class="mt-4 px-6 py-3 bg-emerald-500 text-white font-bold rounded-xl shadow-md hover:bg-emerald-600 transition-colors">Start Season</button>
+                </div>
+                <div class="space-y-4" id="season-list"></div>
+            </div>
+
+            <!-- Audit Log View -->
+            <div id="view-audit" class="hidden-view space-y-6 max-w-4xl">
+                <div class="flex justify-between items-center">
+                    <h2 class="text-3xl font-black text-slate-900">Audit Log</h2>
+                    <button onclick="window.clearAuditLog()" class="px-4 py-2 bg-rose-50 border border-rose-200 text-rose-600 font-bold rounded-xl text-sm hover:bg-rose-100 transition-colors">Clear Log</button>
+                </div>
+                <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                    <div id="audit-log-list" class="space-y-4">
+                        <div class="text-slate-400 text-sm font-bold text-center py-4">No audit events recorded yet.</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Settings View -->
+            <div id="view-settings" class="hidden-view space-y-6 max-w-4xl">
+                <h2 class="text-3xl font-black text-slate-900">Platform Settings</h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div class="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm space-y-6">
+                        <h3 class="font-black text-lg text-slate-800 border-b border-slate-100 pb-2">Core Identity</h3>
+                        <div>
+                            <label class="block text-xs font-black text-slate-500 uppercase tracking-widest mb-1">Portal Website Name</label>
+                            <input type="text" id="set-webname" class="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 font-bold outline-none focus:border-indigo-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2">Platform Logo</label>
+                            <div class="flex items-center gap-4">
+                                <img id="set-logo-preview" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23ccc'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z' /%3E%3C/svg%3E" class="w-16 h-16 rounded-xl object-cover bg-slate-50 border border-slate-200">
+                                <div>
+                                    <label for="set-logo" class="cursor-pointer bg-slate-100 text-slate-700 text-xs font-bold px-4 py-2 rounded-lg hover:bg-slate-200 transition-colors border border-slate-300">Upload Image</label>
+                                    <input type="file" id="set-logo" accept="image/*" class="hidden" onchange="window.handleLogoUpload(event)">
+                                    <p class="text-[10px] text-slate-400 mt-2 font-medium">Used in Share Cards</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm space-y-6">
+                        <h3 class="font-black text-lg text-slate-800 border-b border-slate-100 pb-2">Social Media & Share Cards</h3>
+                        <p class="text-xs text-slate-500 leading-relaxed">Injected into dynamically generated Image Cards.</p>
+                        <div>
+                            <label class="block text-xs font-black text-slate-500 uppercase tracking-widest mb-1">Instagram Handle</label>
+                            <input type="text" id="set-insta" class="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 font-bold outline-none focus:border-indigo-500" placeholder="@your_handle">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-black text-slate-500 uppercase tracking-widest mb-1">YouTube Channel/Name</label>
+                            <input type="text" id="set-yt" class="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 font-bold outline-none focus:border-indigo-500" placeholder="MyChannelName">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-black text-slate-500 uppercase tracking-widest mb-1">X (Twitter) Handle</label>
+                            <input type="text" id="set-x" class="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 font-bold outline-none focus:border-indigo-500" placeholder="@twitter_handle">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm space-y-6">
+                    <h3 class="font-black text-lg text-slate-800 border-b border-slate-100 pb-2">Exam & Assessment Policies</h3>
+                    <label class="flex items-start gap-4 cursor-pointer">
+                        <input type="checkbox" id="set-allow-review" class="w-6 h-6 rounded text-indigo-600 focus:ring-indigo-500 border-slate-300 mt-0.5">
+                        <div>
+                            <span class="block text-sm font-black text-slate-800 mb-1">Allow Students to View Answers After Exam</span>
+                            <span class="block text-xs text-slate-500 font-medium">Students can review correct answers after submitting. Turn off to keep test secure.</span>
+                        </div>
+                    </label>
+                    <label class="flex items-start gap-4 cursor-pointer">
+                        <input type="checkbox" id="set-allow-retake" class="w-6 h-6 rounded text-indigo-600 focus:ring-indigo-500 border-slate-300 mt-0.5">
+                        <div>
+                            <span class="block text-sm font-black text-slate-800 mb-1">Allow Retakes</span>
+                            <span class="block text-xs text-slate-500 font-medium">Students can retake tests. If off, each test can only be taken once per student.</span>
+                        </div>
+                    </label>
+                    <div>
+                        <label class="block text-xs font-black text-slate-500 uppercase tracking-widest mb-1">Passing Score Threshold (%)</label>
+                        <input type="number" min="0" max="100" id="set-pass-threshold" class="w-32 px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 font-bold outline-none focus:border-indigo-500" placeholder="60">
+                        <p class="text-[10px] text-slate-400 mt-1">Used for pass/fail calculation in analytics.</p>
+                    </div>
+                </div>
+
+                <div class="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm space-y-6">
+                    <h3 class="font-black text-lg text-slate-800 border-b border-slate-100 pb-2">Admin Security & Access Management</h3>
+                    
+                    <!-- Session Timeout -->
+                    <div class="p-4 bg-amber-50 border border-amber-200 rounded-xl text-sm">
+                        <div class="font-black text-amber-800 mb-1">⏱ Auto-Lockout Timer</div>
+                        <div class="flex items-center gap-3">
+                            <select id="set-timeout" class="px-3 py-2 rounded-lg bg-white border border-amber-200 font-bold text-sm outline-none">
+                                <option value="0">Disabled</option>
+                                <option value="15">15 minutes</option>
+                                <option value="30" selected>30 minutes</option>
+                                <option value="60">1 hour</option>
+                            </select>
+                            <span class="text-xs text-amber-700 font-medium">Session will auto-lock after inactivity</span>
+                        </div>
+                    </div>
+
+                    <div id="admin-accounts-list" class="space-y-3 mb-6"></div>
+                    <div class="pt-6 border-t border-slate-100">
+                        <h4 class="text-xs font-black text-slate-500 uppercase mb-3">Authorize New Admin</h4>
+                        <div class="flex flex-col sm:flex-row gap-3">
+                            <input type="email" id="new-admin-email" placeholder="New Admin Email" class="flex-1 px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 font-bold outline-none focus:border-indigo-500">
+                            <input type="text" id="new-admin-pwd" placeholder="Set Temporary Password" class="flex-1 px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 font-bold outline-none focus:border-indigo-500">
+                            <button onclick="window.addNewAdmin()" class="px-8 py-3 bg-slate-900 text-white font-bold rounded-xl shadow-md hover:bg-black active:scale-95 transition-all">Authorize Admin</button>
+                        </div>
+                    </div>
+                </div>
+
+                <button onclick="window.saveSettings()" class="w-full py-4 bg-indigo-600 text-white font-black text-lg rounded-xl shadow-md hover:bg-indigo-700 transition-colors">Save All Platform Configurations</button>
+            </div>
+
+            <!-- Full Screen Edit Quiz Modal -->
+            <div id="quiz-editor" class="hidden-view fixed inset-0 z-50 bg-slate-100 overflow-y-auto">
+                <div class="max-w-4xl mx-auto py-10 px-4">
+                    <div class="bg-white p-8 md:p-10 rounded-[2.5rem] shadow-2xl border border-slate-200 relative">
+                        <div class="flex justify-between items-center mb-8 border-b border-slate-100 pb-6">
+                            <h3 class="text-3xl font-black text-slate-900" id="editor-title">Edit Test Module</h3>
+                            <button onclick="window.closeQuizEditor()" class="px-4 py-2 bg-slate-100 rounded-xl font-bold text-slate-600 hover:bg-slate-200 transition-colors">Cancel & Close</button>
+                        </div>
+                        
+                        <div class="space-y-6 mb-6">
+                            <div>
+                                <label class="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2">Module Title</label>
+                                <input type="text" id="edit-quiz-title" class="w-full px-4 py-4 rounded-xl bg-slate-50 border-2 border-slate-100 font-bold outline-none focus:border-indigo-500 text-lg">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2">Description</label>
+                                <textarea id="edit-quiz-desc" rows="3" class="w-full px-4 py-4 rounded-xl bg-slate-50 border-2 border-slate-100 font-medium outline-none focus:border-indigo-500"></textarea>
+                            </div>
+                            <!-- Time Limit -->
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2">Time Limit (minutes, 0 = none)</label>
+                                    <input type="number" min="0" id="edit-quiz-timelimit" class="w-full px-4 py-3 rounded-xl bg-slate-50 border-2 border-slate-100 font-bold outline-none focus:border-indigo-500" placeholder="0">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2">Passing Score (%)</label>
+                                    <input type="number" min="0" max="100" id="edit-quiz-passing" class="w-full px-4 py-3 rounded-xl bg-slate-50 border-2 border-slate-100 font-bold outline-none focus:border-indigo-500" placeholder="60">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- TIMING / AVAILABILITY CONTROL -->
+                        <div class="space-y-4 mb-6 border-b border-slate-100 pb-6">
+                            <h4 class="text-sm font-black text-slate-800">Availability & Draw Test Constraints</h4>
+                            
+                            <label class="flex items-center gap-2 cursor-pointer mb-2">
+                                <input type="checkbox" id="edit-quiz-always" onchange="window.toggleQuizDates()" class="w-5 h-5 rounded text-indigo-600 focus:ring-indigo-500 border-slate-300">
+                                <span class="text-sm font-bold text-slate-700">Always Available (Never Ends)</span>
+                            </label>
+                            
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4" id="quiz-dates-container">
+                                <div>
+                                    <label class="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Start Time</label>
+                                    <input type="datetime-local" id="edit-quiz-start" class="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 font-bold outline-none">
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">End Time</label>
+                                    <input type="datetime-local" id="edit-quiz-end" class="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 font-bold outline-none">
+                                </div>
+                            </div>
+
+                            <!-- ✅ FIXED: Student Picker for Restricted IDs — uses actual generated student IDs -->
+                            <div>
+                                <label class="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Restricted Student IDs — Draw Test Participants</label>
+                                
+                                <!-- Chips display of selected students -->
+                                <div id="restricted-chips" class="flex flex-wrap gap-2 mb-3 min-h-8"></div>
+
+                                <!-- Student search/picker -->
+                                <div class="relative">
+                                    <input type="text" id="student-picker-search" oninput="window.filterStudentPicker()" placeholder="🔍 Search students by name or enrollment ID to add…" class="w-full px-4 py-3 rounded-xl bg-amber-50 border border-amber-200 font-bold text-sm outline-none focus:border-amber-500">
+                                    <div id="student-picker-dropdown" class="hidden absolute z-30 w-full bg-white border border-amber-200 rounded-xl shadow-xl mt-1 max-h-52 overflow-y-auto"></div>
+                                </div>
+                                
+                                <p class="text-[10px] text-slate-400 mt-2">Select students from above. Only selected students will see and can take this test (Draw Test). Leave empty for all students.</p>
+                                
+                                <!-- Hidden actual field storing IDs -->
+                                <input type="hidden" id="edit-quiz-restricted">
+                            </div>
+                        </div>
+
+                        <div class="flex flex-col sm:flex-row sm:justify-between sm:items-end mb-6 border-b border-slate-200 pb-4 gap-4">
+                            <h4 class="text-xl font-black text-slate-800">Questions List</h4>
+                            <select id="add-q-type" class="px-4 py-3 bg-indigo-50 text-indigo-700 rounded-xl font-bold border-none outline-none cursor-pointer hover:bg-indigo-100 transition-colors" onchange="window.addQuestion(this.value); this.value='';">
+                                <option value="">+ Add Question...</option>
+                                <option value="mcq">Multiple Choice</option>
+                                <option value="fill">Fill in the Blank</option>
+                                <option value="match">Matching Pairs</option>
+                                <option value="truefalse">True / False</option>
+                                <option value="short">Short Answer</option>
+                            </select>
+                        </div>
+
+                        <div id="questions-builder" class="space-y-6 mb-10"></div>
+
+                        <div class="flex gap-4">
+                            <button onclick="window.previewQuiz()" class="flex-1 py-4 bg-slate-100 text-slate-700 font-black text-lg rounded-2xl hover:bg-slate-200 transition-all">👁 Preview</button>
+                            <button onclick="window.saveQuizToDB()" class="flex-2 flex-grow py-5 bg-emerald-500 text-white font-black text-xl rounded-2xl shadow-xl hover:bg-emerald-600 active:scale-[0.98] transition-all">
+                                💾 Save Entire Test Module
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quiz Preview Modal -->
+            <div id="quiz-preview-modal" class="hidden-view fixed inset-0 z-[60] bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4">
+                <div class="bg-white w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
+                    <div class="p-6 border-b border-slate-200 flex justify-between items-center shrink-0">
+                        <h3 class="text-xl font-black text-slate-900">Test Preview</h3>
+                        <button onclick="document.getElementById('quiz-preview-modal').classList.add('hidden-view')" class="w-8 h-8 flex items-center justify-center bg-slate-200 hover:bg-rose-100 hover:text-rose-600 rounded-full font-bold">✕</button>
+                    </div>
+                    <div class="p-6 overflow-y-auto flex-1" id="quiz-preview-content"></div>
+                </div>
+            </div>
+
+            <!-- Modal for viewing student previous exams -->
+            <div id="modal-student-results" class="hidden-view fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4">
+                <div class="bg-white w-full max-w-3xl rounded-3xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
+                    <div class="p-6 border-b border-slate-200 bg-slate-50 flex justify-between items-center shrink-0">
+                        <div>
+                            <h3 class="text-xl font-black text-slate-900" id="sr-modal-title">Student Exams</h3>
+                            <p class="text-xs text-slate-500 font-bold mt-1">Review past attempts or remove records</p>
+                        </div>
+                        <button onclick="window.closeStudentResultsModal()" class="w-8 h-8 flex items-center justify-center bg-slate-200 hover:bg-rose-100 hover:text-rose-600 rounded-full font-bold transition-colors">✕</button>
+                    </div>
+                    <div class="p-6 overflow-y-auto flex-1 bg-white space-y-4" id="sr-modal-list"></div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- Alert Toast -->
+    <div id="toast" class="fixed bottom-6 right-6 bg-slate-900 text-white px-6 py-4 rounded-xl shadow-2xl font-bold border border-slate-700 transition-all transform translate-y-24 opacity-0 z-[100]">
+        <span id="toast-msg">Saved!</span>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, doc, setDoc, getDoc, deleteDoc, onSnapshot, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAdkg78FvNF42a5YCmPsZiaE3ZePeC8Vww",
+            authDomain: "test-d39a3.firebaseapp.com",
+            databaseURL: "https://test-d39a3-default-rtdb.firebaseio.com",
+            projectId: "test-d39a3",
+            storageBucket: "test-d39a3.firebasestorage.app",
+            messagingSenderId: "3405156759",
+            appId: "1:3405156759:web:4e0f8fe94f56f7f26234d2",
+            measurementId: "G-TQX3CP5ZS9"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'way-of-light-v3'; 
+        const getPublicCol = (colName) => collection(db, 'artifacts', appId, 'public', 'data', colName);
+        const getPublicDoc = (colName, docId) => doc(db, 'artifacts', appId, 'public', 'data', colName, docId);
+
+        let globalData = { users: [], results: [], quizzes: [], config: {}, seasons: [] };
+        let activeQuizEditor = null;
+        let tempLogoBase64 = "";
+        let user = null;
+        let currentAdminEmail = null;
+        let auditLog = [];
+        let quizFilter = 'all';
+
+        // ========================
+        // SECURITY: Login brute-force protection
+        // ========================
+        const MAX_ATTEMPTS = 5;
+        const LOCKOUT_DURATION_MS = 2 * 60 * 1000; // 2 minutes
+        let loginAttempts = 0;
+        let lockoutUntil = 0;
+        let sessionTimeoutId = null;
+        let lastActivityTime = Date.now();
+
+        const resetSessionTimer = () => {
+            lastActivityTime = Date.now();
+            if (sessionTimeoutId) clearTimeout(sessionTimeoutId);
+            const timeoutMinutes = parseInt(document.getElementById('set-timeout')?.value || '30');
+            if (timeoutMinutes > 0 && currentAdminEmail) {
+                sessionTimeoutId = setTimeout(() => {
+                    if (currentAdminEmail) {
+                        addAuditEntry('info', `Session auto-locked after ${timeoutMinutes}min inactivity.`);
+                        window.logoutAdmin();
+                        showToast('Session auto-locked due to inactivity.', true);
+                    }
+                }, timeoutMinutes * 60 * 1000);
+            }
+        };
+
+        document.addEventListener('click', resetSessionTimer);
+        document.addEventListener('keydown', resetSessionTimer);
+
+        window.togglePwdVisibility = () => {
+            const el = document.getElementById('admin-pwd');
+            el.type = el.type === 'password' ? 'text' : 'password';
+        };
+
+        // ========================
+        // AUDIT LOG
+        // ========================
+        const addAuditEntry = (type, message) => {
+            const entry = { type, message, time: Date.now(), admin: currentAdminEmail || 'system' };
+            auditLog.unshift(entry);
+            if (auditLog.length > 200) auditLog = auditLog.slice(0, 200);
+            try { localStorage.setItem('admin_audit_log', JSON.stringify(auditLog)); } catch(e) {}
+        };
+
+        window.clearAuditLog = () => {
+            if (!confirm("Clear the entire audit log?")) return;
+            auditLog = [];
+            try { localStorage.removeItem('admin_audit_log'); } catch(e) {}
+            renderAuditLog();
+            showToast("Audit log cleared.");
+        };
+
+        const renderAuditLog = () => {
+            const el = document.getElementById('audit-log-list');
+            if (!el) return;
+            if (auditLog.length === 0) {
+                el.innerHTML = `<div class="text-slate-400 text-sm font-bold text-center py-4">No audit events recorded yet.</div>`;
+                return;
+            }
+            el.innerHTML = auditLog.map(e => {
+                const cls = e.type === 'danger' ? 'danger' : e.type === 'success' ? 'success' : '';
+                return `<div class="audit-entry ${cls} py-2">
+                    <div class="font-bold text-slate-800 text-sm">${e.message}</div>
+                    <div class="text-[10px] text-slate-400 mt-0.5">${new Date(e.time).toLocaleString()} · ${e.admin}</div>
+                </div>`;
+            }).join('');
+        };
+
+        const showToast = (msg, isError = false) => {
+            const t = document.getElementById('toast');
+            document.getElementById('toast-msg').innerText = msg;
+            t.className = `fixed bottom-6 right-6 px-6 py-4 rounded-xl shadow-2xl font-bold border transition-all transform z-[100] ${isError ? 'bg-rose-600 border-rose-800 text-white' : 'bg-slate-900 border-slate-700 text-white'}`;
+            t.classList.remove('translate-y-24', 'opacity-0');
+            setTimeout(() => t.classList.add('translate-y-24', 'opacity-0'), isError ? 6000 : 3000);
+        };
+
+        const resizeImageToBase64 = (file, maxSize = 300) => new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = (e) => {
+                const img = new Image();
+                img.src = e.target.result;
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    let [w, h] = [img.width, img.height];
+                    if (w > h && w > maxSize) { h *= maxSize / w; w = maxSize; }
+                    else if (h > maxSize) { w *= maxSize / h; h = maxSize; }
+                    canvas.width = w; canvas.height = h;
+                    canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                    resolve(canvas.toDataURL('image/jpeg', 0.8));
+                };
+            };
+            reader.onerror = reject;
+        });
+
+        window.handleLogoUpload = async (event) => {
+            const file = event.target.files[0];
+            if (!file) return;
+            try {
+                tempLogoBase64 = await resizeImageToBase64(file, 300);
+                document.getElementById('set-logo-preview').src = tempLogoBase64;
+                showToast("Logo loaded! Remember to Save Settings.");
+            } catch(e) { alert("Failed to process image file."); }
+        };
+
+        // ========================
+        // AUTH
+        // ========================
+        window.onload = async () => {
+            // Restore audit log
+            try { const stored = localStorage.getItem('admin_audit_log'); if (stored) auditLog = JSON.parse(stored); } catch(e) {}
+
+            const initAuth = async () => {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    try { await signInWithCustomToken(auth, __initial_auth_token); return; } catch(e) { console.warn("Custom token failed."); }
+                }
+                try { await signInAnonymously(auth); }
+                catch (error) {
+                    if (error.code === 'auth/admin-restricted-operation') console.warn("⚠️ Anonymous Auth disabled.");
+                    else console.error("Auth Error:", error);
+                }
+            };
+            await initAuth();
+            onAuthStateChanged(auth, (authUser) => { user = authUser; initDataSync(); });
+        };
+
+        let isDataInit = false;
+        const initDataSync = () => {
+            if (isDataInit) return;
+            isDataInit = true;
+            
+            onSnapshot(getPublicDoc('admin_settings', 'config'), snap => {
+                if (snap.exists()) {
+                    globalData.config = snap.data();
+                    if (!globalData.config.admins) {
+                        globalData.config.admins = [{ email: 'syedibrahim530520@gmail.com', password: 'ibrahim' }];
+                        setDoc(getPublicDoc('admin_settings', 'config'), globalData.config, { merge: true });
+                    }
+                    tempLogoBase64 = globalData.config.logoUrl || "";
+                    if (currentAdminEmail) window.renderAdminSettings();
+                } else {
+                    globalData.config = {
+                        webName: "Way of Light - Knowledge Portal",
+                        logoUrl: "", socialInsta: "", socialYt: "", socialX: "",
+                        admins: [{ email: 'syedibrahim530520@gmail.com', password: 'ibrahim' }],
+                        allowReviewAnswers: false, allowRetake: true, passThreshold: 60
+                    };
+                    setDoc(getPublicDoc('admin_settings', 'config'), globalData.config).catch(e => console.warn("Could not create default config:", e));
+                }
+            }, err => console.error("Config sync error:", err));
+        };
+
+        // ========================
+        // LOGIN WITH BRUTE FORCE PROTECTION
+        // ========================
+        window.loginAdmin = async () => {
+            const now = Date.now();
+            if (now < lockoutUntil) {
+                const secs = Math.ceil((lockoutUntil - now) / 1000);
+                document.getElementById('lockout-timer').innerText = `Locked out. Try again in ${secs}s.`;
+                document.getElementById('lockout-timer').classList.remove('hidden');
+                return;
+            }
+
+            const email = document.getElementById('admin-email').value.trim().toLowerCase();
+            const pwd = document.getElementById('admin-pwd').value;
+            const errEl = document.getElementById('login-error');
+            errEl.classList.add('hidden');
+            document.getElementById('lockout-timer').classList.add('hidden');
+
+            if (!email || !pwd) {
+                errEl.innerText = "Email and Password required.";
+                errEl.classList.remove('hidden');
+                return;
+            }
+
+            const adminsList = globalData.config.admins || [{ email: 'syedibrahim530520@gmail.com', password: 'ibrahim' }];
+            const match = adminsList.find(a => a.email.toLowerCase() === email && a.password === pwd);
+
+            if (match) {
+                loginAttempts = 0;
+                document.getElementById('login-lockout-bar').classList.add('hidden');
+                document.getElementById('login-attempts-bar').style.width = '0%';
+                currentAdminEmail = match.email;
+                document.getElementById('admin-login-overlay').classList.add('hidden-view');
+                document.getElementById('admin-app').classList.remove('hidden-view');
+                document.getElementById('admin-email').value = '';
+                document.getElementById('admin-pwd').value = '';
+                document.getElementById('logged-in-as').innerText = `Signed in as: ${currentAdminEmail}`;
+                addAuditEntry('success', `Admin signed in: ${currentAdminEmail}`);
+                resetSessionTimer();
+                fetchAppData();
+            } else {
+                loginAttempts++;
+                addAuditEntry('danger', `Failed login attempt for: ${email} (attempt ${loginAttempts})`);
+                document.getElementById('login-lockout-bar').classList.remove('hidden');
+                document.getElementById('login-attempts-bar').style.width = `${(loginAttempts / MAX_ATTEMPTS) * 100}%`;
+                document.getElementById('attempt-count').innerText = loginAttempts;
+
+                if (loginAttempts >= MAX_ATTEMPTS) {
+                    lockoutUntil = Date.now() + LOCKOUT_DURATION_MS;
+                    loginAttempts = 0;
+                    document.getElementById('login-btn').disabled = true;
+                    const countdown = setInterval(() => {
+                        const remaining = Math.ceil((lockoutUntil - Date.now()) / 1000);
+                        if (remaining <= 0) {
+                            clearInterval(countdown);
+                            document.getElementById('login-btn').disabled = false;
+                            document.getElementById('lockout-timer').classList.add('hidden');
+                            document.getElementById('login-lockout-bar').classList.add('hidden');
+                            document.getElementById('login-attempts-bar').style.width = '0%';
+                        } else {
+                            document.getElementById('lockout-timer').innerText = `Too many failures. Wait ${remaining}s.`;
+                            document.getElementById('lockout-timer').classList.remove('hidden');
+                        }
+                    }, 1000);
+                } else {
+                    errEl.innerText = `Invalid credentials. ${MAX_ATTEMPTS - loginAttempts} attempt(s) remaining.`;
+                    errEl.classList.remove('hidden');
+                }
+            }
+        };
+
+        window.logoutAdmin = async () => {
+            if (currentAdminEmail) addAuditEntry('info', `Admin signed out: ${currentAdminEmail}`);
+            currentAdminEmail = null;
+            if (sessionTimeoutId) clearTimeout(sessionTimeoutId);
+            document.getElementById('admin-login-overlay').classList.remove('hidden-view');
+            document.getElementById('admin-app').classList.add('hidden-view');
+            isAppFetched = false;
+        };
+
+        // ========================
+        // TAB SWITCHING
+        // ========================
+        window.switchTab = (tab) => {
+            ['dashboard', 'students', 'quizzes', 'results', 'seasons', 'audit', 'settings'].forEach(t => {
+                document.getElementById(`view-${t}`)?.classList.add('hidden-view');
+                document.getElementById(`nav-${t}`)?.classList.remove('active');
+            });
+            document.getElementById(`view-${tab}`)?.classList.remove('hidden-view');
+            document.getElementById(`nav-${tab}`)?.classList.add('active');
+
+            if (tab === 'settings') {
+                document.getElementById('set-webname').value = globalData.config.webName || '';
+                if (tempLogoBase64) document.getElementById('set-logo-preview').src = tempLogoBase64;
+                document.getElementById('set-insta').value = globalData.config.socialInsta || '';
+                document.getElementById('set-yt').value = globalData.config.socialYt || '';
+                document.getElementById('set-x').value = globalData.config.socialX || '';
+                document.getElementById('set-allow-review').checked = globalData.config.allowReviewAnswers === true;
+                document.getElementById('set-allow-retake').checked = globalData.config.allowRetake !== false;
+                document.getElementById('set-pass-threshold').value = globalData.config.passThreshold ?? 60;
+                if (typeof window.renderAdminSettings === 'function') window.renderAdminSettings();
+            }
+            if (tab === 'audit') renderAuditLog();
+            if (tab === 'results') renderAnalytics();
+        };
+
+        // ========================
+        // DATA FETCH
+        // ========================
+        let isAppFetched = false;
+        const fetchAppData = () => {
+            if (isAppFetched) return;
+            isAppFetched = true;
+
+            onSnapshot(getPublicCol('exam_users'), snap => {
+                globalData.users = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                renderDashboard(); renderStudents();
+                document.getElementById('nav-student-count').innerText = globalData.users.length;
+                document.getElementById('last-sync-time').innerText = new Date().toLocaleTimeString();
+            }, err => console.error("Users sync error:", err));
+
+            onSnapshot(getPublicCol('exam_results'), snap => {
+                globalData.results = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                renderDashboard(); renderStudents();
+                document.getElementById('last-sync-time').innerText = new Date().toLocaleTimeString();
+            }, err => console.error("Results sync error:", err));
+
+            onSnapshot(getPublicCol('exam_quizzes'), snap => {
+                globalData.quizzes = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                renderQuizzes();
+                document.getElementById('stat-active-tests').innerText = globalData.quizzes.length;
+            }, err => console.error("Quizzes sync error:", err));
+
+            onSnapshot(getPublicCol('exam_seasons'), snap => {
+                globalData.seasons = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                renderSeasons();
+            }, err => console.error("Seasons sync error:", err));
+        };
+
+        // ========================
+        // DASHBOARD
+        // ========================
+        const renderDashboard = () => {
+            document.getElementById('stat-students').innerText = globalData.users.length;
+            document.getElementById('stat-tests').innerText = globalData.results.length;
+            const totalScore = globalData.results.reduce((s, r) => s + (r.score || 0), 0);
+            document.getElementById('stat-avg').innerText = globalData.results.length ? Math.round(totalScore / globalData.results.length) : 0;
+
+            // Leaderboard
+            const xpMap = {};
+            globalData.results.forEach(r => { xpMap[r.studentId] = (xpMap[r.studentId] || 0) + (r.score || 0); });
+            const sorted = Object.entries(xpMap).map(([id, xp]) => ({
+                name: globalData.users.find(u => u.id === id)?.name || 'Unknown', xp
+            })).sort((a, b) => b.xp - a.xp).slice(0, 5);
+
+            const lbEl = document.getElementById('dash-leaderboard');
+            const medals = ['🥇', '🥈', '🥉', '4️⃣', '5️⃣'];
+            lbEl.innerHTML = sorted.length ? sorted.map((u, i) => `
+                <div class="flex items-center justify-between py-2 border-b border-slate-50 last:border-0">
+                    <div class="flex items-center gap-2">
+                        <span class="text-lg">${medals[i]}</span>
+                        <span class="font-bold text-slate-800 text-sm">${u.name}</span>
+                    </div>
+                    <span class="font-black text-indigo-600 text-sm">${u.xp} XP</span>
+                </div>`).join('') : `<div class="text-slate-400 text-sm font-bold text-center py-4">No data yet.</div>`;
+
+            // Recent submissions
+            const recent = [...globalData.results].sort((a, b) => b.timestamp - a.timestamp).slice(0, 5);
+            const recEl = document.getElementById('dash-recent');
+            recEl.innerHTML = recent.length ? recent.map(r => {
+                const student = globalData.users.find(u => u.id === r.studentId);
+                const quiz = globalData.quizzes.find(q => q.id === r.testId);
+                return `<div class="flex items-center justify-between py-2 border-b border-slate-50 last:border-0">
+                    <div>
+                        <div class="font-bold text-slate-800 text-sm">${student?.name || 'Unknown'}</div>
+                        <div class="text-[10px] text-slate-400">${quiz?.title || 'Deleted test'} · ${new Date(r.timestamp).toLocaleString()}</div>
+                    </div>
+                    <span class="font-black text-emerald-600 text-sm">${r.score}/${r.totalPossible}</span>
+                </div>`;
+            }).join('') : `<div class="text-slate-400 text-sm font-bold text-center py-4">No submissions yet.</div>`;
+        };
+
+        window.resetAllExams = async () => {
+            const code = Math.floor(1000 + Math.random() * 9000);
+            const confirmation = prompt(`⚠️ DANGER: This will permanently delete ALL exam attempts.\nType this code to confirm: ${code}`);
+            if (confirmation !== code.toString()) return;
+            showToast("Wiping all exam records...");
+            let count = 0;
+            try {
+                for (let r of globalData.results) { await deleteDoc(getPublicDoc('exam_results', r.id)); count++; }
+                addAuditEntry('danger', `All exam records deleted (${count} records) by ${currentAdminEmail}`);
+                showToast(`Deleted ${count} exam records. Stats are reset.`);
+            } catch(e) { alert("Failed to delete some records. Check connection."); }
+        };
+
+        // ========================
+        // ANALYTICS
+        // ========================
+        const renderAnalytics = () => {
+            const threshold = (globalData.config.passThreshold ?? 60) / 100;
+            const totalXP = globalData.results.reduce((s, r) => s + (r.score || 0), 0);
+            const highest = globalData.results.reduce((m, r) => Math.max(m, r.score || 0), 0);
+            const passCount = globalData.results.filter(r => r.totalPossible && (r.score / r.totalPossible) >= threshold).length;
+            const passRate = globalData.results.length ? Math.round((passCount / globalData.results.length) * 100) : 0;
+
+            document.getElementById('ana-pass-rate').innerText = `${passRate}%`;
+            document.getElementById('ana-highest').innerText = highest;
+            document.getElementById('ana-total-xp').innerText = totalXP;
+
+            // Per-test table
+            const perTest = {};
+            globalData.results.forEach(r => {
+                if (!perTest[r.testId]) perTest[r.testId] = { scores: [], count: 0 };
+                perTest[r.testId].scores.push(r.score || 0);
+                perTest[r.testId].count++;
+            });
+
+            const el = document.getElementById('results-table');
+            const entries = Object.entries(perTest).map(([testId, d]) => {
+                const quiz = globalData.quizzes.find(q => q.id === testId);
+                const avg = Math.round(d.scores.reduce((a, b) => a + b, 0) / d.scores.length);
+                return { title: quiz?.title || 'Deleted Test', count: d.count, avg };
+            }).sort((a, b) => b.count - a.count);
+
+            el.innerHTML = entries.length ? entries.map(e => `
+                <div class="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-100">
+                    <div>
+                        <div class="font-black text-slate-800">${e.title}</div>
+                        <div class="text-xs text-slate-400 font-bold">${e.count} attempt${e.count !== 1 ? 's' : ''}</div>
+                    </div>
+                    <div class="text-right">
+                        <div class="font-black text-indigo-600">Avg: ${e.avg}</div>
+                    </div>
+                </div>`).join('') : `<div class="text-slate-400 text-sm font-bold text-center py-4">No exam results yet.</div>`;
+        };
+
+        // ========================
+        // STUDENTS
+        // ========================
+        const renderStudents = () => {
+            const search = (document.getElementById('student-search')?.value || '').toLowerCase();
+            const filtered = globalData.users.filter(u =>
+                !search || u.name?.toLowerCase().includes(search) || u.enrollmentId?.toLowerCase().includes(search)
+            );
+            const tbody = document.getElementById('student-table-body');
+            const emptyEl = document.getElementById('student-empty');
+            if (!tbody) return;
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = '';
+                emptyEl.classList.remove('hidden');
+                return;
+            }
+            emptyEl.classList.add('hidden');
+            tbody.innerHTML = filtered.map(u => {
+                const userResults = globalData.results.filter(r => r.studentId === u.id);
+                const xp = userResults.reduce((s, r) => s + (r.score || 0), 0);
+                const joined = u.createdAt ? new Date(u.createdAt).toLocaleDateString() : '—';
+                return `
+                <tr class="hover:bg-slate-50 transition-colors">
+                    <td class="px-6 py-4">
+                        <div class="flex items-center gap-3">
+                            <img src="${u.avatar || 'https://api.dicebear.com/9.x/avataaars/svg?seed=' + u.id}" class="w-10 h-10 rounded-full border border-slate-200 bg-white object-cover">
+                            <div>
+                                <div class="font-bold text-slate-800">${u.name}</div>
+                                <div class="flex items-center gap-2 mt-0.5">
+                                    <span class="text-[10px] font-black text-indigo-600 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded-md font-mono">${u.enrollmentId || '—'}</span>
+                                    <span class="text-[10px] font-mono text-slate-300">${u.id.slice(0, 8)}…</span>
+                                </div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4">
+                        <div class="text-sm font-medium text-slate-600">${u.email || 'N/A'}</div>
+                        <div class="text-xs text-slate-400">${u.phone || 'N/A'}</div>
+                    </td>
+                    <td class="px-6 py-4 text-sm">
+                        <div class="font-bold text-slate-600">${userResults.length} Tests</div>
+                        <div class="font-black text-indigo-600">${xp} XP</div>
+                    </td>
+                    <td class="px-6 py-4 text-sm text-slate-400 font-medium">${joined}</td>
+                    <td class="px-6 py-4 text-right">
+                        <div class="flex justify-end gap-2">
+                            <button onclick="window.viewStudentResults('${u.id}')" class="px-4 py-2 bg-slate-100 text-slate-700 font-bold rounded-xl hover:bg-slate-200 transition-colors text-xs">Exams</button>
+                            <button onclick="window.deleteStudent('${u.id}')" class="px-3 py-2 bg-rose-100 text-rose-600 font-bold rounded-xl hover:bg-rose-200 transition-colors text-xs">Remove</button>
+                        </div>
+                    </td>
+                </tr>`;
+            }).join('');
+        };
+
+        window.filterStudents = () => renderStudents();
+
+        window.exportStudentsCSV = () => {
+            const rows = [['Name', 'Enrollment ID', 'Email', 'Phone', 'Tests Taken', 'Total XP']];
+            globalData.users.forEach(u => {
+                const userResults = globalData.results.filter(r => r.studentId === u.id);
+                const xp = userResults.reduce((s, r) => s + (r.score || 0), 0);
+                rows.push([u.name, u.enrollmentId || '', u.email || '', u.phone || '', userResults.length, xp]);
+            });
+            const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
+            const a = document.createElement('a');
+            a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+            a.download = 'students_export.csv';
+            a.click();
+            addAuditEntry('info', `Student records exported to CSV by ${currentAdminEmail}`);
+            showToast("CSV exported!");
+        };
+
+        window.deleteStudent = async (studentId) => {
+            const student = globalData.users.find(u => u.id === studentId);
+            if (!confirm(`Are you sure you want to permanently delete "${student?.name}" AND all their exam history?`)) return;
+            try {
+                await deleteDoc(getPublicDoc('exam_users', studentId));
+                for (let r of globalData.results.filter(x => x.studentId === studentId)) {
+                    await deleteDoc(getPublicDoc('exam_results', r.id));
+                }
+                addAuditEntry('danger', `Student deleted: ${student?.name} [${student?.enrollmentId}] by ${currentAdminEmail}`);
+                showToast("Student profile and records wiped.");
+            } catch(e) { alert("Failed to remove student. Check permissions."); }
+        };
+
+        window.viewStudentResults = (studentId) => {
+            const student = globalData.users.find(u => u.id === studentId);
+            if (!student) return;
+            const eidLabel = student.enrollmentId ? ` [${student.enrollmentId}]` : '';
+            document.getElementById('sr-modal-title').innerText = `${student.name}${eidLabel} — Records`;
+            const results = globalData.results.filter(r => r.studentId === studentId).sort((a, b) => b.timestamp - a.timestamp);
+            const listEl = document.getElementById('sr-modal-list');
+
+            listEl.innerHTML = results.length === 0
+                ? `<div class="text-center p-8 text-slate-400 font-bold">No exam attempts yet.</div>`
+                : results.map(r => {
+                    const quiz = globalData.quizzes.find(q => q.id === r.testId);
+                    const quizTitle = quiz ? quiz.title : 'Deleted Test Module';
+                    const pct = r.totalPossible ? Math.round((r.score / r.totalPossible) * 100) : 0;
+                    const threshold = globalData.config.passThreshold ?? 60;
+                    const passed = pct >= threshold;
+                    return `
+                    <div class="p-4 border border-slate-200 rounded-2xl flex justify-between items-center bg-slate-50">
+                        <div>
+                            <div class="font-black text-slate-800">${quizTitle}</div>
+                            <div class="text-xs text-slate-500 font-medium">${new Date(r.timestamp).toLocaleString()}</div>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <span class="text-xs font-black px-2 py-0.5 rounded-lg ${passed ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}">${passed ? 'PASS' : 'FAIL'}</span>
+                            <span class="px-3 py-1 bg-emerald-100 text-emerald-800 rounded-lg font-black text-sm">${r.score} / ${r.totalPossible} (${pct}%)</span>
+                            <button onclick="window.deleteStudentResult('${r.id}', '${studentId}')" class="w-8 h-8 flex items-center justify-center bg-rose-100 text-rose-600 rounded-lg hover:bg-rose-200 font-bold">🗑️</button>
+                        </div>
+                    </div>`;
+                }).join('');
+            document.getElementById('modal-student-results').classList.remove('hidden-view');
+        };
+
+        window.closeStudentResultsModal = () => document.getElementById('modal-student-results').classList.add('hidden-view');
+
+        window.deleteStudentResult = async (resultId, studentId) => {
+            if (!confirm("Delete this specific exam result? The student will lose this XP and can retake the exam.")) return;
+            try {
+                await deleteDoc(getPublicDoc('exam_results', resultId));
+                showToast("Result removed permanently.");
+                setTimeout(() => window.viewStudentResults(studentId), 300);
+            } catch(e) { alert("Error deleting record."); }
+        };
+
+        // ========================
+        // SEASONS
+        // ========================
+        const renderSeasons = () => {
+            const listEl = document.getElementById('season-list');
+            if (globalData.seasons.length === 0) {
+                listEl.innerHTML = `<div class="p-8 text-center bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200 font-bold text-slate-400">No Seasons Created.</div>`;
+                return;
+            }
+            listEl.innerHTML = globalData.seasons.sort((a, b) => b.start - a.start).map(s => {
+                const isNow = Date.now() >= s.start && Date.now() <= s.end;
+                const status = isNow
+                    ? `<span class="bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full text-xs font-black">🟢 Active</span>`
+                    : `<span class="bg-slate-200 text-slate-600 px-3 py-1 rounded-full text-xs font-black">Ended</span>`;
+
+                let winDisplay = '';
+                if (s.winner?.first) {
+                    winDisplay = `<div class="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-xl text-amber-900 text-sm font-bold flex flex-col gap-2">
+                        <div class="flex justify-between items-center bg-white/50 p-2 rounded-lg border border-amber-100"><span>🥇 1st: ${s.winner.first.name}</span><span class="bg-amber-200 px-2 py-1 rounded-md text-xs">${s.winner.first.xp} XP</span></div>
+                        ${s.winner.second ? `<div class="flex justify-between items-center p-1 text-slate-600"><span>🥈 2nd: ${s.winner.second.name}</span><span class="text-xs">${s.winner.second.xp} XP</span></div>` : ''}
+                        ${s.winner.third ? `<div class="flex justify-between items-center p-1 text-slate-600"><span>🥉 3rd: ${s.winner.third.name}</span><span class="text-xs">${s.winner.third.xp} XP</span></div>` : ''}
+                    </div>`;
+                }
+
+                return `<div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+                    <div class="flex justify-between items-center mb-2">
+                        <h4 class="font-black text-xl text-slate-800">${s.name}</h4>${status}
+                    </div>
+                    <div class="text-xs font-bold text-slate-500 mb-2">📅 ${new Date(s.start).toLocaleDateString()} — ${new Date(s.end).toLocaleDateString()}</div>
+                    ${winDisplay}
+                    <div class="mt-4 flex gap-3 border-t border-slate-100 pt-4">
+                        ${!s.winner ? `<button onclick="window.announceSeasonWinner('${s.id}')" class="px-4 py-2 bg-indigo-50 text-indigo-700 font-bold rounded-xl hover:bg-indigo-100 transition-colors text-sm">Calculate Winners & Check Draws</button>` : ''}
+                        <button onclick="window.deleteSeason('${s.id}')" class="px-3 py-2 bg-rose-50 text-rose-600 font-bold rounded-xl hover:bg-rose-100 transition-colors text-sm">Delete</button>
+                    </div>
+                </div>`;
+            }).join('');
+        };
+
+        window.createSeason = async () => {
+            const name = document.getElementById('season-name').value.trim();
+            const startStr = document.getElementById('season-start').value;
+            const endStr = document.getElementById('season-end').value;
+            if (!name || !startStr || !endStr) return alert("All fields are required.");
+            const startTs = new Date(startStr).getTime();
+            const endTs = new Date(endStr).setHours(23, 59, 59, 999);
+            if (startTs >= endTs) return alert("End date must be after start date.");
+            const id = 'season_' + Date.now();
+            try {
+                await setDoc(getPublicDoc('exam_seasons', id), { id, name, start: startTs, end: endTs, winner: null });
+                addAuditEntry('success', `Season created: "${name}" by ${currentAdminEmail}`);
+                showToast("Season launched!");
+                ['season-name', 'season-start', 'season-end'].forEach(id => document.getElementById(id).value = '');
+            } catch(e) { alert("Failed to create season."); }
+        };
+
+        window.deleteSeason = async (id) => {
+            if (!confirm("Delete this season? (User XP is safe — only the season wrapper is removed)")) return;
+            await deleteDoc(getPublicDoc('exam_seasons', id));
+            addAuditEntry('danger', `Season deleted by ${currentAdminEmail}`);
+            showToast("Season removed.");
+        };
+
+        // Enhanced tie-breaker draw logic — uses actual student IDs from DB
+        window.announceSeasonWinner = async (seasonId) => {
+            const s = globalData.seasons.find(x => x.id === seasonId);
+            if (!s) return;
+
+            const stats = {};
+            const validRes = globalData.results.filter(r => r.timestamp >= s.start && r.timestamp <= s.end);
+            validRes.forEach(r => { stats[r.studentId] = (stats[r.studentId] || 0) + r.score; });
+
+            if (Object.keys(stats).length === 0) return alert("No exams were taken during this season.");
+
+            const sortedUsers = Object.keys(stats).map(uid => ({
+                id: uid, // ✅ ACTUAL Firestore document ID from exam_users
+                name: globalData.users.find(u => u.id === uid)?.name || 'Unknown',
+                enrollmentId: globalData.users.find(u => u.id === uid)?.enrollmentId || null,
+                xp: stats[uid]
+            })).sort((a, b) => b.xp - a.xp);
+
+            const xpGroups = {};
+            sortedUsers.forEach(u => { if (!xpGroups[u.xp]) xpGroups[u.xp] = []; xpGroups[u.xp].push(u); });
+            const uniqueXPs = Object.keys(xpGroups).map(Number).sort((a, b) => b - a);
+            let positionAssignments = [];
+            let pos = 1;
+            uniqueXPs.forEach(xp => {
+                const group = xpGroups[xp];
+                positionAssignments.push({ rank: pos, xp, users: group });
+                pos += group.length;
+            });
+
+            const top3Positions = positionAssignments.filter(p => p.rank <= 3);
+            const allDrawStudents = [];
+            const drawDetails = [];
+
+            top3Positions.forEach(p => {
+                if (p.users.length > 1) {
+                    allDrawStudents.push(...p.users);
+                    const suffix = p.rank === 1 ? 'st' : p.rank === 2 ? 'nd' : 'rd';
+                    const names = p.users.map(u => `${u.name}${u.enrollmentId ? ` [${u.enrollmentId}]` : ''} (${u.xp} XP)`).join(', ');
+                    drawDetails.push(`${p.rank}${suffix} Place Draw: ${names}`);
+                }
+            });
+
+            if (allDrawStudents.length > 0) {
+                const drawMsg = `🚨 DRAWS DETECTED!\n\n${drawDetails.join('\n')}\n\n${allDrawStudents.length} student(s) in a draw.\n\nSystem will create ONE exclusive "Draw Test" for ALL these students to resolve ties.\n\nProceed?`;
+                if (confirm(drawMsg)) {
+                    const placeLabel = drawDetails.length === 1 ? drawDetails[0].split(':')[0] : 'Multiple Positions';
+                    // ✅ KEY FIX: restrictedTo uses the actual Firestore document IDs (u.id) — not enrollment IDs or any other field
+                    activeQuizEditor = {
+                        id: 'quiz_' + Date.now(),
+                        title: `DRAW TEST: ${s.name} — ${placeLabel} Tie-Breaker`,
+                        desc: `DRAW ROUND: Exclusive test to resolve: ${drawDetails.join(' | ')}. Mandatory for all qualifying students.`,
+                        questions: [],
+                        alwaysAvailable: true,
+                        restrictedTo: allDrawStudents.map(u => u.id) // ✅ Actual Firestore user IDs
+                    };
+                    addAuditEntry('info', `Draw Test created for season "${s.name}" — ${allDrawStudents.length} students`);
+                    window.switchTab('quizzes');
+                    openQuizEditor();
+                    showToast(`Draw Test ready for ${allDrawStudents.length} students. Add questions and save!`);
+                }
+                return;
+            }
+
+            // Clean win
+            const rank1 = positionAssignments[0]?.users || [];
+            const rank2 = positionAssignments[1]?.users || [];
+            const rank3 = positionAssignments[2]?.users || [];
+            let summary = `Clear Winners Found!\n\n`;
+            if (rank1[0]) summary += `🥇 1st: ${rank1[0].name} (${rank1[0].xp} XP)\n`;
+            if (rank2[0]) summary += `🥈 2nd: ${rank2[0].name} (${rank2[0].xp} XP)\n`;
+            if (rank3[0]) summary += `🥉 3rd: ${rank3[0].name} (${rank3[0].xp} XP)\n`;
+            summary += `\nFinalize and announce globally?`;
+
+            if (confirm(summary)) {
+                const winnerObj = {
+                    first: rank1[0] ? { id: rank1[0].id, name: rank1[0].name, xp: rank1[0].xp } : null,
+                    second: rank2[0] ? { id: rank2[0].id, name: rank2[0].name, xp: rank2[0].xp } : null,
+                    third: rank3[0] ? { id: rank3[0].id, name: rank3[0].name, xp: rank3[0].xp } : null,
+                };
+                winnerObj.id = rank1[0]?.id; winnerObj.name = rank1[0]?.name; winnerObj.xp = rank1[0]?.xp;
+                await updateDoc(getPublicDoc('exam_seasons', seasonId), { winner: winnerObj });
+                addAuditEntry('success', `Winners announced for season "${s.name}" by ${currentAdminEmail}`);
+                showToast("Winners Announced Globally! 🏆");
+            }
+        };
+
+        // ========================
+        // SETTINGS
+        // ========================
+        window.saveSettings = async () => {
+            const nw = document.getElementById('set-webname').value.trim();
+            if (!nw) return alert("Website Name is required.");
+            const updated = {
+                webName: nw,
+                logoUrl: tempLogoBase64,
+                socialInsta: document.getElementById('set-insta').value.trim(),
+                socialYt: document.getElementById('set-yt').value.trim(),
+                socialX: document.getElementById('set-x').value.trim(),
+                allowReviewAnswers: document.getElementById('set-allow-review').checked,
+                allowRetake: document.getElementById('set-allow-retake').checked,
+                passThreshold: parseInt(document.getElementById('set-pass-threshold').value) || 60,
+                admins: globalData.config.admins
+            };
+            try {
+                await setDoc(getPublicDoc('admin_settings', 'config'), updated);
+                addAuditEntry('success', `Platform settings saved by ${currentAdminEmail}`);
+                showToast("Platform Configuration Saved!");
+                // Update sidebar
+                document.getElementById('sidebar-title').innerText = nw;
+                if (tempLogoBase64) { const logo = document.getElementById('sidebar-logo'); logo.src = tempLogoBase64; logo.classList.remove('hidden'); }
+            } catch(e) { alert("Failed to save settings."); }
+        };
+
+        window.renderAdminSettings = () => {
+            const listEl = document.getElementById('admin-accounts-list');
+            if (!listEl) return;
+            const admins = globalData.config.admins || [];
+            listEl.innerHTML = admins.map((a, i) => {
+                const isMe = a.email === currentAdminEmail;
+                return `<div class="flex flex-col md:flex-row md:items-center justify-between p-4 bg-slate-50 border border-slate-200 rounded-xl gap-4">
+                    <div class="font-bold text-slate-700 flex items-center gap-2">
+                        ${a.email}
+                        ${isMe ? '<span class="text-[10px] bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-md uppercase tracking-widest font-black">You</span>' : ''}
+                    </div>
+                    <div class="flex flex-col sm:flex-row gap-2">
+                        ${isMe ? `
+                            <input type="text" id="update-pwd-${i}" placeholder="New password" class="px-3 py-2 text-sm rounded-lg border border-slate-300 outline-none focus:border-indigo-500 font-bold w-full sm:w-48">
+                            <button onclick="window.updateAdminPassword(${i})" class="px-4 py-2 bg-indigo-600 text-white text-xs font-bold rounded-lg hover:bg-indigo-700 transition-colors shadow-sm whitespace-nowrap">Change Password</button>
+                        ` : `
+                            <button onclick="window.removeAdmin(${i})" class="px-4 py-2 bg-rose-100 text-rose-600 text-xs font-bold rounded-lg hover:bg-rose-200 transition-colors whitespace-nowrap">Revoke Access</button>
+                        `}
+                    </div>
+                </div>`;
+            }).join('');
+        };
+
+        window.updateAdminPassword = async (index) => {
+            const newPwd = document.getElementById(`update-pwd-${index}`).value.trim();
+            if (!newPwd || newPwd.length < 6) return alert("Password must be at least 6 characters long.");
+            const updatedConfig = { ...globalData.config };
+            updatedConfig.admins[index].password = newPwd;
+            try {
+                await setDoc(getPublicDoc('admin_settings', 'config'), updatedConfig);
+                addAuditEntry('success', `Admin password changed for: ${updatedConfig.admins[index].email}`);
+                showToast("Password updated successfully!");
+                document.getElementById(`update-pwd-${index}`).value = '';
+            } catch(e) { alert("Failed to update password."); }
+        };
+
+        window.removeAdmin = async (index) => {
+            if (globalData.config.admins.length <= 1) return alert("Cannot remove the last admin.");
+            if (!confirm("Revoke access for this admin?")) return;
+            const updatedConfig = { ...globalData.config };
+            const removed = updatedConfig.admins[index].email;
+            updatedConfig.admins.splice(index, 1);
+            try {
+                await setDoc(getPublicDoc('admin_settings', 'config'), updatedConfig);
+                addAuditEntry('danger', `Admin access revoked for: ${removed} by ${currentAdminEmail}`);
+                showToast("Admin access revoked.");
+            } catch(e) { alert("Failed to remove admin."); }
+        };
+
+        window.addNewAdmin = async () => {
+            const email = document.getElementById('new-admin-email').value.trim().toLowerCase();
+            const pwd = document.getElementById('new-admin-pwd').value;
+            if (!email || !pwd) return alert("Both Email and a Temporary Password are required.");
+            if (pwd.length < 6) return alert("Password must be at least 6 characters.");
+            const updatedConfig = { ...globalData.config };
+            if (!updatedConfig.admins) updatedConfig.admins = [];
+            if (updatedConfig.admins.find(a => a.email === email)) return alert("This email is already an admin.");
+            updatedConfig.admins.push({ email, password: pwd });
+            try {
+                await setDoc(getPublicDoc('admin_settings', 'config'), updatedConfig);
+                addAuditEntry('success', `New admin authorized: ${email} by ${currentAdminEmail}`);
+                showToast("New Admin Authorized!");
+                document.getElementById('new-admin-email').value = '';
+                document.getElementById('new-admin-pwd').value = '';
+            } catch(e) { alert("Failed to authorize admin."); }
+        };
+
+        // ========================
+        // QUIZ BUILDER
+        // ========================
+        const renderQuizzes = () => {
+            const container = document.getElementById('quiz-list');
+            if (!container) return;
+            const filtered = globalData.quizzes.filter(q => {
+                if (quizFilter === 'draw') return q.restrictedTo && q.restrictedTo.length > 0;
+                if (quizFilter === 'open') return !q.restrictedTo || q.restrictedTo.length === 0;
+                return true;
+            });
+
+            container.innerHTML = filtered.map(q => {
+                let timeStr = "Always Available";
+                if (!q.alwaysAvailable && (q.availableFrom || q.availableTo)) {
+                    const from = q.availableFrom ? new Date(q.availableFrom).toLocaleString() : 'Anytime';
+                    const to = q.availableTo ? new Date(q.availableTo).toLocaleString() : 'Forever';
+                    timeStr = `From: ${from} · Till: ${to}`;
+                }
+                const isDrawTest = q.restrictedTo && q.restrictedTo.length > 0;
+                const restrictedBadge = isDrawTest
+                    ? `<span class="px-2 py-1 bg-amber-100 text-amber-800 text-[10px] font-black rounded uppercase border border-amber-200">🔒 Draw Test (${q.restrictedTo.length} students)</span>` : '';
+                const timeLimitBadge = q.timeLimit ? `<span class="px-2 py-1 bg-blue-100 text-blue-700 text-[10px] font-black rounded">⏱ ${q.timeLimit}min</span>` : '';
+                return `
+                <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between hover:shadow-md transition-all ${isDrawTest ? 'draw-test-card' : ''}">
+                    <div>
+                        <h4 class="font-black text-xl mb-2 text-slate-800">${q.title}</h4>
+                        <div class="flex flex-wrap gap-2 mb-3">
+                            <span class="px-2 py-1 bg-slate-100 text-slate-600 font-bold rounded-lg text-[10px] uppercase">${timeStr}</span>
+                            ${restrictedBadge}${timeLimitBadge}
+                        </div>
+                        <p class="text-sm text-slate-500 mb-4 line-clamp-2">${q.desc || 'No description.'}</p>
+                        <span class="text-xs font-bold bg-slate-100 px-3 py-1.5 rounded-lg text-slate-600">${(q.questions || []).length} Questions</span>
+                    </div>
+                    <div class="mt-6 flex gap-2">
+                        <button onclick="window.editQuiz('${q.id}')" class="flex-1 py-3 bg-indigo-50 text-indigo-600 font-bold rounded-xl hover:bg-indigo-100 transition-colors">Edit Module</button>
+                        <button onclick="window.duplicateQuiz('${q.id}')" class="px-4 py-3 bg-slate-50 text-slate-600 font-bold rounded-xl hover:bg-slate-100 transition-colors" title="Duplicate">📋</button>
+                        <button onclick="window.deleteQuiz('${q.id}')" class="px-4 py-3 bg-rose-50 text-rose-600 font-bold rounded-xl hover:bg-rose-100 transition-colors" title="Delete">🗑️</button>
+                    </div>
+                </div>`;
+            }).join('') || `<div class="col-span-2 p-8 text-center text-slate-400 font-bold bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200">No tests found.</div>`;
+        };
+
+        window.filterQuizzes = (filter) => {
+            quizFilter = filter;
+            ['all', 'open', 'draw'].forEach(f => {
+                const btn = document.getElementById(`qf-${f}`);
+                if (btn) btn.className = f === filter
+                    ? 'px-4 py-2 bg-indigo-600 text-white font-bold rounded-xl text-sm'
+                    : 'px-4 py-2 bg-slate-100 text-slate-700 font-bold rounded-xl text-sm hover:bg-slate-200';
+            });
+            renderQuizzes();
+        };
+
+        window.createNewQuiz = () => {
+            activeQuizEditor = { id: 'quiz_' + Date.now(), title: '', desc: '', questions: [], alwaysAvailable: true, restrictedTo: [], timeLimit: 0, passingScore: 60 };
+            openQuizEditor();
+        };
+
+        window.editQuiz = (id) => {
+            const q = globalData.quizzes.find(x => x.id === id);
+            if (q) { activeQuizEditor = JSON.parse(JSON.stringify(q)); if (activeQuizEditor.alwaysAvailable === undefined) activeQuizEditor.alwaysAvailable = true; openQuizEditor(); }
+        };
+
+        window.duplicateQuiz = async (id) => {
+            const q = globalData.quizzes.find(x => x.id === id);
+            if (!q) return;
+            const newQ = JSON.parse(JSON.stringify(q));
+            newQ.id = 'quiz_' + Date.now();
+            newQ.title = 'Copy of ' + newQ.title;
+            try {
+                await setDoc(getPublicDoc('exam_quizzes', newQ.id), newQ);
+                addAuditEntry('info', `Test duplicated: "${q.title}" by ${currentAdminEmail}`);
+                showToast("Test duplicated!");
+            } catch(e) { alert("Failed to duplicate test."); }
+        };
+
+        window.deleteQuiz = async (id) => {
+            const q = globalData.quizzes.find(x => x.id === id);
+            if (confirm(`Delete "${q?.title || 'this test'}" permanently?`)) {
+                await deleteDoc(getPublicDoc('exam_quizzes', id));
+                addAuditEntry('danger', `Test deleted: "${q?.title}" by ${currentAdminEmail}`);
+                showToast("Test Deleted");
+            }
+        };
+
+        const toDatetimeLocal = (ts) => {
+            if (!ts) return '';
+            const d = new Date(ts);
+            d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+            return d.toISOString().slice(0, 16);
+        };
+
+        // ========================
+        // STUDENT PICKER for Draw Test
+        // ========================
+        let selectedRestrictedIds = new Set();
+
+        const renderRestrictedChips = () => {
+            const container = document.getElementById('restricted-chips');
+            if (!container) return;
+            if (selectedRestrictedIds.size === 0) {
+                container.innerHTML = `<span class="text-xs text-slate-400 font-bold italic">No students selected — test is open to all.</span>`;
+                return;
+            }
+            container.innerHTML = [...selectedRestrictedIds].map(uid => {
+                const student = globalData.users.find(u => u.id === uid);
+                const label = student ? `${student.name}${student.enrollmentId ? ` [${student.enrollmentId}]` : ''}` : uid.slice(0, 10) + '…';
+                return `<span class="student-chip selected" onclick="window.removeRestrictedStudent('${uid}')">
+                    ${label} <span class="remove">✕</span>
+                </span>`;
+            }).join('');
+            document.getElementById('edit-quiz-restricted').value = [...selectedRestrictedIds].join(',');
+        };
+
+        window.removeRestrictedStudent = (uid) => {
+            selectedRestrictedIds.delete(uid);
+            renderRestrictedChips();
+        };
+
+        window.filterStudentPicker = () => {
+            const query = document.getElementById('student-picker-search')?.value?.toLowerCase() || '';
+            const dropdown = document.getElementById('student-picker-dropdown');
+            if (!dropdown) return;
+            if (!query) { dropdown.classList.add('hidden'); return; }
+
+            const matches = globalData.users.filter(u =>
+                !selectedRestrictedIds.has(u.id) &&
+                (u.name?.toLowerCase().includes(query) || u.enrollmentId?.toLowerCase().includes(query))
+            ).slice(0, 10);
+
+            if (matches.length === 0) {
+                dropdown.innerHTML = `<div class="p-3 text-xs text-slate-400 font-bold">No matching students found.</div>`;
+                dropdown.classList.remove('hidden');
+                return;
+            }
+
+            dropdown.innerHTML = matches.map(u => `
+                <div class="flex items-center gap-3 px-4 py-3 hover:bg-amber-50 cursor-pointer border-b border-amber-50 last:border-0"
+                     onclick="window.addRestrictedStudent('${u.id}')">
+                    <img src="${u.avatar || 'https://api.dicebear.com/9.x/avataaars/svg?seed=' + u.id}" class="w-7 h-7 rounded-full border border-slate-200 bg-white">
+                    <div>
+                        <div class="font-bold text-slate-800 text-sm">${u.name}</div>
+                        <div class="text-[10px] text-slate-400">${u.enrollmentId || 'No enrollment ID'} · ${u.id.slice(0, 12)}…</div>
+                    </div>
+                </div>`).join('');
+            dropdown.classList.remove('hidden');
+        };
+
+        window.addRestrictedStudent = (uid) => {
+            selectedRestrictedIds.add(uid);
+            renderRestrictedChips();
+            document.getElementById('student-picker-search').value = '';
+            document.getElementById('student-picker-dropdown').classList.add('hidden');
+        };
+
+        // Close dropdown on outside click
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('#student-picker-search') && !e.target.closest('#student-picker-dropdown')) {
+                document.getElementById('student-picker-dropdown')?.classList.add('hidden');
+            }
+        });
+
+        const openQuizEditor = () => {
+            document.getElementById('quiz-editor')?.classList.remove('hidden-view');
+            document.getElementById('edit-quiz-title').value = activeQuizEditor.title || '';
+            document.getElementById('edit-quiz-desc').value = activeQuizEditor.desc || '';
+            document.getElementById('edit-quiz-always').checked = activeQuizEditor.alwaysAvailable;
+            document.getElementById('edit-quiz-start').value = toDatetimeLocal(activeQuizEditor.availableFrom);
+            document.getElementById('edit-quiz-end').value = toDatetimeLocal(activeQuizEditor.availableTo);
+            document.getElementById('edit-quiz-timelimit').value = activeQuizEditor.timeLimit || 0;
+            document.getElementById('edit-quiz-passing').value = activeQuizEditor.passingScore || 60;
+
+            // ✅ Populate restricted student chips from stored IDs
+            selectedRestrictedIds = new Set(activeQuizEditor.restrictedTo || []);
+            renderRestrictedChips();
+            document.getElementById('student-picker-search').value = '';
+
+            window.toggleQuizDates();
+            renderQuestionsBuilder();
+        };
+
+        window.toggleQuizDates = () => {
+            const isAlways = document.getElementById('edit-quiz-always').checked;
+            const container = document.getElementById('quiz-dates-container');
+            container?.classList.toggle('opacity-50', isAlways);
+            container?.classList.toggle('pointer-events-none', isAlways);
+        };
+
+        window.closeQuizEditor = () => {
+            document.getElementById('quiz-editor')?.classList.add('hidden-view');
+            activeQuizEditor = null;
+        };
+
+        const renderQuestionsBuilder = () => {
+            const container = document.getElementById('questions-builder');
+            if (!container) return;
+            if (activeQuizEditor.questions.length === 0) {
+                container.innerHTML = `<div class="p-8 text-center text-slate-400 font-bold bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200">No questions yet. Add one above.</div>`;
+                return;
+            }
+            container.innerHTML = activeQuizEditor.questions.map((q, i) => {
+                let internals = '';
+                if (q.type === 'mcq') {
+                    internals = `<div class="space-y-3 mt-4">
+                        <div>
+                            <label class="text-[10px] uppercase font-black text-slate-400 mb-1 block">Options (Comma separated)</label>
+                            <input type="text" value="${(q.options || []).join(', ')}" onchange="window.updateQ(${i}, 'options', this.value)" class="w-full p-3 bg-white border-2 border-slate-200 focus:border-indigo-500 rounded-xl text-sm font-bold outline-none">
+                        </div>
+                        <div>
+                            <label class="text-[10px] uppercase font-black text-slate-400 mb-1 block">Correct Answer (match one option exactly)</label>
+                            <input type="text" value="${q.correct || ''}" onchange="window.updateQ(${i}, 'correct', this.value)" class="w-full p-3 bg-emerald-50 border-2 border-emerald-100 focus:border-emerald-400 rounded-xl text-sm font-bold text-emerald-900 outline-none">
+                        </div>
+                    </div>`;
+                } else if (q.type === 'fill' || q.type === 'short') {
+                    internals = `<div class="mt-4">
+                        <label class="text-[10px] uppercase font-black text-slate-400 mb-1 block">Correct Answer</label>
+                        <input type="text" value="${q.correct || ''}" onchange="window.updateQ(${i}, 'correct', this.value)" class="w-full p-3 bg-emerald-50 border-2 border-emerald-100 focus:border-emerald-400 rounded-xl text-sm font-bold text-emerald-900 outline-none">
+                    </div>`;
+                } else if (q.type === 'truefalse') {
+                    internals = `<div class="mt-4">
+                        <label class="text-[10px] uppercase font-black text-slate-400 mb-2 block">Correct Answer</label>
+                        <div class="flex gap-4">
+                            <label class="flex items-center gap-2 cursor-pointer font-bold text-sm">
+                                <input type="radio" name="tf-${i}" value="True" ${q.correct === 'True' ? 'checked' : ''} onchange="window.updateQ(${i}, 'correct', this.value)" class="text-emerald-600"> ✅ True
+                            </label>
+                            <label class="flex items-center gap-2 cursor-pointer font-bold text-sm">
+                                <input type="radio" name="tf-${i}" value="False" ${q.correct === 'False' ? 'checked' : ''} onchange="window.updateQ(${i}, 'correct', this.value)" class="text-rose-600"> ❌ False
+                            </label>
+                        </div>
+                    </div>`;
+                } else if (q.type === 'match') {
+                    const pairsStr = q.pairs ? Object.entries(q.pairs).map(([k, v]) => `${k}=${v}`).join(' | ') : '';
+                    internals = `<div class="mt-4">
+                        <label class="text-[10px] uppercase font-black text-slate-400 mb-1 block">Pairs (Term1=Def1 | Term2=Def2)</label>
+                        <input type="text" value="${pairsStr}" onchange="window.updateQ(${i}, 'pairs', this.value)" class="w-full p-3 bg-white border-2 border-slate-200 focus:border-indigo-500 rounded-xl text-sm font-bold outline-none">
+                    </div>`;
+                }
+
+                // XP input
+                const xpField = `<div class="mt-3">
+                    <label class="text-[10px] uppercase font-black text-slate-400 mb-1 block">Points / XP for this question</label>
+                    <input type="number" min="1" value="${q.xp || 1}" onchange="window.updateQ(${i}, 'xp', parseInt(this.value)||1)" class="w-24 p-2 bg-white border border-slate-200 rounded-lg text-sm font-bold outline-none">
+                </div>`;
+
+                return `<div class="p-6 bg-slate-50 border-2 border-slate-100 rounded-2xl relative group hover:border-indigo-200 transition-colors">
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="flex gap-2 items-center">
+                            <span class="bg-indigo-600 text-white text-[10px] px-3 py-1 rounded-full font-black uppercase">${q.type}</span>
+                            <span class="text-xs font-black text-slate-400">Question ${i + 1}</span>
+                        </div>
+                        <div class="flex gap-2">
+                            ${i > 0 ? `<button onclick="window.moveQ(${i}, -1)" class="w-7 h-7 bg-slate-200 hover:bg-slate-300 rounded-lg font-bold text-xs" title="Move up">↑</button>` : ''}
+                            ${i < activeQuizEditor.questions.length - 1 ? `<button onclick="window.moveQ(${i}, 1)" class="w-7 h-7 bg-slate-200 hover:bg-slate-300 rounded-lg font-bold text-xs" title="Move down">↓</button>` : ''}
+                            <button onclick="window.removeQ(${i})" class="w-7 h-7 bg-rose-100 text-rose-600 rounded-full font-bold text-xs" title="Remove">✕</button>
+                        </div>
+                    </div>
+                    <label class="text-[10px] uppercase font-black text-slate-400 mb-1 block">Question Prompt</label>
+                    <textarea onchange="window.updateQ(${i}, 'q', this.value)" rows="2" class="w-full p-3 bg-white border-2 border-slate-200 focus:border-indigo-500 rounded-xl text-sm font-bold outline-none">${q.q || ''}</textarea>
+                    ${internals}
+                    ${xpField}
+                </div>`;
+            }).join('');
+        };
+
+        window.addQuestion = (type) => {
+            if (!type) return;
+            const newQ = { type, q: '', xp: 1 };
+            if (type === 'mcq') { newQ.options = []; newQ.correct = ''; }
+            if (type === 'fill' || type === 'short') { newQ.correct = ''; }
+            if (type === 'truefalse') { newQ.correct = 'True'; }
+            if (type === 'match') { newQ.pairs = {}; }
+            activeQuizEditor.questions.push(newQ);
+            renderQuestionsBuilder();
+        };
+
+        window.moveQ = (index, dir) => {
+            const newIndex = index + dir;
+            if (newIndex < 0 || newIndex >= activeQuizEditor.questions.length) return;
+            const questions = activeQuizEditor.questions;
+            [questions[index], questions[newIndex]] = [questions[newIndex], questions[index]];
+            renderQuestionsBuilder();
+        };
+
+        window.updateQ = (index, field, value) => {
+            if (field === 'options') {
+                activeQuizEditor.questions[index].options = value.split(',').map(s => s.trim()).filter(s => s);
+            } else if (field === 'pairs') {
+                const dict = {};
+                value.split('|').forEach(p => { const [k, v] = p.split('='); if (k && v) dict[k.trim()] = v.trim(); });
+                activeQuizEditor.questions[index].pairs = dict;
+            } else {
+                activeQuizEditor.questions[index][field] = value;
+            }
+        };
+
+        window.removeQ = (index) => { activeQuizEditor.questions.splice(index, 1); renderQuestionsBuilder(); };
+
+        window.previewQuiz = () => {
+            const title = document.getElementById('edit-quiz-title').value || 'Untitled';
+            const qs = activeQuizEditor.questions;
+            const content = document.getElementById('quiz-preview-content');
+            content.innerHTML = `
+                <h2 class="text-xl font-black mb-2">${title}</h2>
+                <p class="text-sm text-slate-500 mb-6">${qs.length} question(s)</p>
+                ${qs.map((q, i) => `
+                    <div class="mb-5 p-4 bg-slate-50 rounded-xl border border-slate-200">
+                        <div class="font-black text-slate-800 mb-2">Q${i + 1}. ${q.q || '<em class="text-slate-400">No prompt</em>'}</div>
+                        ${q.type === 'mcq' && q.options ? q.options.map(o => `<div class="text-sm px-3 py-1 rounded-lg mb-1 ${o === q.correct ? 'bg-emerald-100 text-emerald-800 font-black' : 'bg-white border border-slate-200 text-slate-600'}">${o}</div>`).join('') : ''}
+                        ${q.type === 'truefalse' ? `<div class="flex gap-3 mt-1"><span class="px-3 py-1 rounded-lg text-sm font-bold ${q.correct === 'True' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'}">True</span><span class="px-3 py-1 rounded-lg text-sm font-bold ${q.correct === 'False' ? 'bg-rose-100 text-rose-700' : 'bg-slate-100 text-slate-500'}">False</span></div>` : ''}
+                        ${['fill','short'].includes(q.type) ? `<div class="text-xs text-emerald-700 font-bold mt-1">Answer: ${q.correct || '—'}</div>` : ''}
+                        <div class="text-[10px] text-slate-400 font-bold mt-2">XP: ${q.xp || 1}</div>
+                    </div>`).join('')}`;
+            document.getElementById('quiz-preview-modal').classList.remove('hidden-view');
+        };
+
+        window.saveQuizToDB = async () => {
+            activeQuizEditor.title = document.getElementById('edit-quiz-title').value.trim() || 'Untitled Test';
+            activeQuizEditor.desc = document.getElementById('edit-quiz-desc').value.trim();
+            activeQuizEditor.alwaysAvailable = document.getElementById('edit-quiz-always').checked;
+            activeQuizEditor.timeLimit = parseInt(document.getElementById('edit-quiz-timelimit').value) || 0;
+            activeQuizEditor.passingScore = parseInt(document.getElementById('edit-quiz-passing').value) || 60;
+
+            const sTime = document.getElementById('edit-quiz-start').value;
+            const eTime = document.getElementById('edit-quiz-end').value;
+            activeQuizEditor.availableFrom = sTime ? new Date(sTime).getTime() : null;
+            activeQuizEditor.availableTo = eTime ? new Date(eTime).getTime() : null;
+
+            // ✅ Uses actual DB user IDs from the student picker — not manually typed text
+            activeQuizEditor.restrictedTo = [...selectedRestrictedIds];
+
+            if (activeQuizEditor.questions.length === 0) return alert("Cannot save a module with 0 questions.");
+
+            try {
+                await setDoc(getPublicDoc('exam_quizzes', activeQuizEditor.id), activeQuizEditor);
+                addAuditEntry('success', `Test saved: "${activeQuizEditor.title}" by ${currentAdminEmail}${activeQuizEditor.restrictedTo.length ? ` (Draw Test — ${activeQuizEditor.restrictedTo.length} restricted students)` : ''}`);
+                showToast("Test Module Saved!");
+                window.closeQuizEditor();
+            } catch(e) {
+                console.error(e);
+                alert("Failed to save. Check your network.");
+            }
+        };
+
+    </script>
+</body>
+</html>
