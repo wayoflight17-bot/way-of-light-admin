@@ -417,14 +417,24 @@
 
             <!-- Quizzes View -->
             <div id="view-quizzes" class="hidden-view space-y-6">
-                <div class="flex justify-between items-center">
+                <div class="flex justify-between items-center flex-wrap gap-3">
                     <h2 class="text-3xl font-black text-slate-900">Test Builder</h2>
                     <button onclick="window.createNewQuiz()" class="px-4 py-2 bg-indigo-600 text-white font-bold rounded-xl shadow-md hover:bg-indigo-700 transition-colors">+ New Test Module</button>
                 </div>
-                <div class="flex gap-3 flex-wrap">
-                    <button onclick="window.filterQuizzes('all')" id="qf-all" class="px-4 py-2 bg-indigo-600 text-white font-bold rounded-xl text-sm">All</button>
-                    <button onclick="window.filterQuizzes('open')" id="qf-open" class="px-4 py-2 bg-slate-100 text-slate-700 font-bold rounded-xl text-sm hover:bg-slate-200">Open Tests</button>
-                    <button onclick="window.filterQuizzes('draw')" id="qf-draw" class="px-4 py-2 bg-slate-100 text-slate-700 font-bold rounded-xl text-sm hover:bg-slate-200">Draw Tests</button>
+                <div class="flex gap-3 flex-wrap items-center">
+                    <div class="flex gap-2 flex-wrap">
+                        <button onclick="window.filterQuizzes('all')" id="qf-all" class="px-4 py-2 bg-indigo-600 text-white font-bold rounded-xl text-sm">All</button>
+                        <button onclick="window.filterQuizzes('open')" id="qf-open" class="px-4 py-2 bg-slate-100 text-slate-700 font-bold rounded-xl text-sm hover:bg-slate-200">Open Tests</button>
+                        <button onclick="window.filterQuizzes('draw')" id="qf-draw" class="px-4 py-2 bg-slate-100 text-slate-700 font-bold rounded-xl text-sm hover:bg-slate-200">Draw Tests</button>
+                    </div>
+                    <div class="h-5 border-l border-slate-200 hidden sm:block"></div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs font-black text-slate-400 uppercase tracking-widest">Season:</span>
+                        <select id="qf-season" onchange="window.filterQuizzesBySeason(this.value)" class="px-3 py-2 rounded-xl bg-white border border-slate-200 font-bold text-sm outline-none focus:border-indigo-500">
+                            <option value="">All Seasons</option>
+                            <option value="__none__">No Season (General)</option>
+                        </select>
+                    </div>
                 </div>
                 <div id="quiz-list" class="grid grid-cols-1 md:grid-cols-2 gap-6"></div>
             </div>
@@ -878,6 +888,63 @@
                             <button onclick="window.closeEditMarksModal()" class="flex-1 py-3 bg-slate-100 text-slate-700 font-bold rounded-xl hover:bg-slate-200 transition-colors">Cancel</button>
                             <button onclick="window.saveEditedMarks()" class="flex-1 py-3 bg-emerald-600 text-white font-black rounded-xl hover:bg-emerald-700 transition-colors shadow-md">Save Marks</button>
                         </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== EDIT STUDY MATERIAL MODAL ===== -->
+            <div id="modal-edit-study" class="hidden-view fixed inset-0 z-[85] bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4">
+                <div class="bg-white w-full max-w-xl rounded-3xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
+                    <div class="p-6 border-b border-slate-200 bg-gradient-to-r from-violet-50 to-indigo-50 flex justify-between items-center shrink-0">
+                        <div>
+                            <h3 class="text-lg font-black text-slate-900">✏️ Edit Study Material</h3>
+                            <p class="text-xs text-slate-500 font-bold mt-1" id="edit-sc-type-label">YouTube Video</p>
+                        </div>
+                        <button onclick="window.closeEditStudyModal()" class="w-8 h-8 flex items-center justify-center bg-white hover:bg-rose-100 hover:text-rose-600 rounded-full font-bold transition-colors border border-slate-200">✕</button>
+                    </div>
+                    <div class="p-6 overflow-y-auto flex-1 space-y-5">
+                        <input type="hidden" id="edit-sc-id">
+                        <input type="hidden" id="edit-sc-type">
+
+                        <div>
+                            <label class="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2">Title / Description</label>
+                            <input type="text" id="edit-sc-title" class="w-full px-4 py-3 rounded-xl bg-slate-50 border-2 border-slate-100 focus:border-indigo-500 outline-none font-bold text-sm">
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2">Category / Topic</label>
+                                <input type="text" id="edit-sc-category" class="w-full px-4 py-3 rounded-xl bg-slate-50 border-2 border-slate-100 focus:border-indigo-500 outline-none font-bold text-sm" placeholder="e.g. Chapter 1, Biology…">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2">Order / Position</label>
+                                <input type="number" id="edit-sc-order" min="1" class="w-full px-4 py-3 rounded-xl bg-slate-50 border-2 border-slate-100 focus:border-indigo-500 outline-none font-bold text-sm" placeholder="1, 2, 3…">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2">📅 Season</label>
+                            <select id="edit-sc-season-id" class="w-full px-4 py-3 rounded-xl bg-slate-50 border-2 border-slate-100 focus:border-indigo-500 outline-none font-bold text-sm">
+                                <option value="">— No Season (General) —</option>
+                            </select>
+                        </div>
+
+                        <!-- YouTube edit -->
+                        <div id="edit-sc-yt-section" class="hidden">
+                            <label class="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2">YouTube Video URL</label>
+                            <input type="text" id="edit-sc-yt-url" class="w-full px-4 py-3 rounded-xl bg-slate-50 border-2 border-slate-100 focus:border-red-500 outline-none font-bold text-sm font-mono" placeholder="https://www.youtube.com/watch?v=...">
+                        </div>
+
+                        <!-- Instagram edit -->
+                        <div id="edit-sc-insta-section" class="hidden">
+                            <label class="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2">Instagram Post URLs</label>
+                            <div id="edit-sc-insta-list" class="space-y-2 mb-2"></div>
+                            <button type="button" onclick="window.addEditInstaUrl()" class="px-4 py-2 bg-slate-100 text-slate-700 font-bold rounded-lg text-sm hover:bg-slate-200 transition-colors">+ Add URL</button>
+                        </div>
+                    </div>
+                    <div class="p-6 border-t border-slate-100 flex gap-3 shrink-0">
+                        <button onclick="window.closeEditStudyModal()" class="flex-1 py-3 bg-slate-100 text-slate-700 font-bold rounded-xl hover:bg-slate-200 transition-colors">Cancel</button>
+                        <button onclick="window.saveEditedStudyContent()" class="flex-1 py-3 bg-violet-600 text-white font-black rounded-xl hover:bg-violet-700 transition-all shadow-md">Save Changes</button>
                     </div>
                 </div>
             </div>
@@ -2000,12 +2067,38 @@
         // ========================
         // QUIZ BUILDER
         // ========================
+        let quizSeasonFilter = ''; // '' = all seasons, '__none__' = no season, else seasonId
+
+        // Populate the season dropdown in Test Builder whenever seasons data updates
+        const populateQuizSeasonFilter = () => {
+            const sel = document.getElementById('qf-season');
+            if (!sel) return;
+            const current = sel.value;
+            sel.innerHTML = `<option value="">All Seasons</option><option value="__none__">No Season (General)</option>` +
+                (globalData.seasons || []).slice().sort((a, b) => b.start - a.start).map(s => {
+                    const isActive = Date.now() >= s.start && Date.now() <= s.end;
+                    return `<option value="${s.id}">${isActive ? '🟢 ' : ''}${s.name}${isActive ? ' (Active)' : ''}</option>`;
+                }).join('');
+            // Restore previous selection if it still exists
+            if ([...sel.options].some(o => o.value === current)) sel.value = current;
+        };
+
+        window.filterQuizzesBySeason = (seasonId) => {
+            quizSeasonFilter = seasonId;
+            renderQuizzes();
+        };
+
         const renderQuizzes = () => {
+            populateQuizSeasonFilter();
             const container = document.getElementById('quiz-list');
             if (!container) return;
             const filtered = globalData.quizzes.filter(q => {
-                if (quizFilter === 'draw') return q.restrictedTo && q.restrictedTo.length > 0;
-                if (quizFilter === 'open') return !q.restrictedTo || q.restrictedTo.length === 0;
+                // Type filter
+                if (quizFilter === 'draw' && !(q.restrictedTo && q.restrictedTo.length > 0)) return false;
+                if (quizFilter === 'open' && (q.restrictedTo && q.restrictedTo.length > 0)) return false;
+                // Season filter
+                if (quizSeasonFilter === '__none__' && q.seasonId) return false;
+                if (quizSeasonFilter && quizSeasonFilter !== '__none__' && q.seasonId !== quizSeasonFilter) return false;
                 return true;
             });
 
@@ -2054,6 +2147,13 @@
                     : 'px-4 py-2 bg-slate-100 text-slate-700 font-bold rounded-xl text-sm hover:bg-slate-200';
             });
             renderQuizzes();
+        };
+
+        // Alias so the season dropdown in Test Builder repopulates when navigating to that tab
+        const _origSwitchTab = window.switchTab;
+        window.switchTab = (tab) => {
+            _origSwitchTab(tab);
+            if (tab === 'quizzes') populateQuizSeasonFilter();
         };
 
         window.createNewQuiz = () => {
@@ -2914,7 +3014,10 @@
                         <div class="font-black text-slate-800 text-base truncate">${item.title}</div>
                         <div class="text-[10px] text-slate-400 font-bold mt-1">Added ${dateStr}${item.issuedBy ? ` · ${item.issuedBy}` : ''}${item.type === 'instagram' ? ` · ${(item.posts||[]).length} post(s)` : ''}</div>
                     </div>
-                    <button onclick="window.deleteStudyContent('${item.id}')" class="px-3 py-2 bg-rose-50 text-rose-600 font-bold rounded-xl hover:bg-rose-100 transition-colors text-xs flex-shrink-0">🗑️ Delete</button>
+                    <div class="flex flex-col gap-2 flex-shrink-0">
+                        <button onclick="window.openEditStudyModal('${item.id}')" class="px-3 py-2 bg-violet-50 text-violet-600 font-bold rounded-xl hover:bg-violet-100 transition-colors text-xs">✏️ Edit</button>
+                        <button onclick="window.deleteStudyContent('${item.id}')" class="px-3 py-2 bg-rose-50 text-rose-600 font-bold rounded-xl hover:bg-rose-100 transition-colors text-xs">🗑️ Delete</button>
+                    </div>
                 </div>`;
             }).join('');
         };
@@ -2927,6 +3030,121 @@
                 addAuditEntry('danger', `Study content deleted: "${item?.title}" by ${currentAdminEmail}`);
                 showToast("Study material removed.");
             } catch(e) { alert("Failed to delete."); }
+        };
+
+        // ========================
+        // EDIT STUDY CONTENT MODAL
+        // ========================
+        let _editScInstaCount = 0;
+
+        window.openEditStudyModal = (id) => {
+            const item = (globalData.studyContent || []).find(x => x.id === id);
+            if (!item) return;
+
+            document.getElementById('edit-sc-id').value = id;
+            document.getElementById('edit-sc-type').value = item.type;
+            document.getElementById('edit-sc-title').value = item.title || '';
+            document.getElementById('edit-sc-category').value = item.category || '';
+            document.getElementById('edit-sc-order').value = item.order || '';
+            document.getElementById('edit-sc-type-label').innerText = item.type === 'youtube' ? '▶️ YouTube Video' : '📸 Instagram Post';
+
+            // Populate season dropdown
+            const sel = document.getElementById('edit-sc-season-id');
+            const now = Date.now();
+            const seasons = (globalData.seasons || []).sort((a, b) => b.start - a.start);
+            sel.innerHTML = `<option value="">— No Season (General) —</option>` +
+                seasons.map(s => {
+                    const isActive = now >= s.start && now <= s.end;
+                    return `<option value="${s.id}">${isActive ? '🟢 ' : ''}${s.name}${isActive ? ' (Active)' : ''}</option>`;
+                }).join('');
+            sel.value = item.seasonId || '';
+
+            // Show correct section
+            const ytSection = document.getElementById('edit-sc-yt-section');
+            const instaSection = document.getElementById('edit-sc-insta-section');
+            if (item.type === 'youtube') {
+                ytSection.classList.remove('hidden');
+                instaSection.classList.add('hidden');
+                document.getElementById('edit-sc-yt-url').value = item.originalUrl || `https://www.youtube.com/watch?v=${item.youtubeId}`;
+            } else {
+                ytSection.classList.add('hidden');
+                instaSection.classList.remove('hidden');
+                // Populate instagram URL fields
+                const list = document.getElementById('edit-sc-insta-list');
+                list.innerHTML = '';
+                _editScInstaCount = 0;
+                (item.posts || []).forEach(p => {
+                    _editScInstaCount++;
+                    const idx = _editScInstaCount;
+                    const row = document.createElement('div');
+                    row.className = 'flex gap-2 items-center';
+                    row.id = `edit-sc-insta-row-${idx}`;
+                    row.innerHTML = `
+                        <input type="text" id="edit-sc-insta-url-${idx}" value="${p.url || ''}" class="flex-1 px-4 py-3 rounded-xl bg-slate-50 border-2 border-slate-100 focus:border-pink-400 outline-none font-bold text-sm font-mono">
+                        <button type="button" onclick="document.getElementById('edit-sc-insta-row-${idx}').remove()" class="w-9 h-9 flex items-center justify-center bg-rose-100 text-rose-600 rounded-lg hover:bg-rose-200 font-bold text-lg flex-shrink-0">✕</button>
+                    `;
+                    list.appendChild(row);
+                });
+                if ((item.posts || []).length === 0) window.addEditInstaUrl();
+            }
+
+            document.getElementById('modal-edit-study').classList.remove('hidden-view');
+        };
+
+        window.addEditInstaUrl = () => {
+            const list = document.getElementById('edit-sc-insta-list');
+            if (!list) return;
+            _editScInstaCount++;
+            const idx = _editScInstaCount;
+            const row = document.createElement('div');
+            row.className = 'flex gap-2 items-center';
+            row.id = `edit-sc-insta-row-${idx}`;
+            row.innerHTML = `
+                <input type="text" id="edit-sc-insta-url-${idx}" placeholder="https://www.instagram.com/p/…" class="flex-1 px-4 py-3 rounded-xl bg-slate-50 border-2 border-slate-100 focus:border-pink-400 outline-none font-bold text-sm font-mono">
+                <button type="button" onclick="document.getElementById('edit-sc-insta-row-${idx}').remove()" class="w-9 h-9 flex items-center justify-center bg-rose-100 text-rose-600 rounded-lg hover:bg-rose-200 font-bold text-lg flex-shrink-0">✕</button>
+            `;
+            list.appendChild(row);
+        };
+
+        window.closeEditStudyModal = () => {
+            document.getElementById('modal-edit-study').classList.add('hidden-view');
+        };
+
+        window.saveEditedStudyContent = async () => {
+            const id = document.getElementById('edit-sc-id').value;
+            const type = document.getElementById('edit-sc-type').value;
+            const title = document.getElementById('edit-sc-title').value.trim();
+            const category = document.getElementById('edit-sc-category').value.trim();
+            const seasonId = document.getElementById('edit-sc-season-id').value || '';
+            const orderVal = parseInt(document.getElementById('edit-sc-order').value) || 0;
+
+            if (!title) return alert("Title is required.");
+
+            const item = (globalData.studyContent || []).find(x => x.id === id);
+            if (!item) return alert("Item not found.");
+
+            let updates = { title, category, seasonId, order: orderVal, updatedAt: Date.now(), updatedBy: currentAdminEmail };
+
+            if (type === 'youtube') {
+                const url = document.getElementById('edit-sc-yt-url').value.trim();
+                const vid = extractYouTubeId(url);
+                if (!vid) return alert("Could not extract YouTube video ID. Please check the URL.");
+                updates.youtubeId = vid;
+                updates.originalUrl = url;
+            } else {
+                const urls = [...document.querySelectorAll('[id^="edit-sc-insta-url-"]')].map(el => el.value.trim()).filter(Boolean);
+                if (!urls.length) return alert("Please add at least one Instagram post URL.");
+                const shortcodes = urls.map(u => ({ url: u, shortcode: extractInstaShortcode(u) })).filter(x => x.shortcode);
+                if (!shortcodes.length) return alert("Could not parse any valid Instagram post URLs.");
+                updates.posts = shortcodes;
+            }
+
+            try {
+                await updateDoc(getPublicDoc('study_content', id), updates);
+                addAuditEntry('success', `Study content edited: "${title}" [${type}] by ${currentAdminEmail}`);
+                showToast("Study material updated! ✏️");
+                window.closeEditStudyModal();
+            } catch(e) { console.error(e); alert("Failed to save changes. Check connection."); }
         };
 
     </script>
