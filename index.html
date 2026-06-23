@@ -431,7 +431,16 @@
 
             <!-- Seasons View -->
             <div id="view-seasons" class="hidden-view space-y-6 max-w-4xl">
-                <h2 class="text-3xl font-black text-slate-900">Seasons Management</h2>
+                <div>
+                    <h2 class="text-3xl font-black text-slate-900">Seasons Management</h2>
+                    <div class="mt-3 flex items-start gap-3 p-4 bg-indigo-50 border border-indigo-200 rounded-2xl text-sm">
+                        <span class="text-xl flex-shrink-0">⚡</span>
+                        <div>
+                            <span class="font-black text-indigo-800">Admin-adjusted XP is included in winner calculations.</span>
+                            <span class="text-indigo-700 font-medium ml-1">When you click "Calculate Winners", each student's total XP (exam scores <strong>+</strong> any XP overrides you've applied) is used for ranking. Adjusted amounts are shown transparently in the confirmation and in the winner display.</span>
+                        </div>
+                    </div>
+                </div>
                 <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
                     <h3 class="font-black text-lg text-slate-800 mb-4">Create New Season</h3>
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -796,7 +805,7 @@
                     </div>
                     <div class="p-6 space-y-5">
                         <div class="p-4 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 font-bold leading-relaxed">
-                            ⚠️ This adds or subtracts XP from the student's earned score. Use positive to boost rank or negative to reduce it. This does <em>not</em> delete any exam results.
+                            ⚠️ This adds or subtracts XP from the student's earned score. Use positive values to boost a student's rank or negative to reduce it. This does <em>not</em> delete any exam results.
                         </div>
                         <div>
                             <label class="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2">XP Adjustment</label>
@@ -805,15 +814,69 @@
                                 <input type="number" id="xp-override-value" class="flex-1 px-4 py-3 rounded-xl bg-slate-50 border-2 border-slate-200 font-black text-center text-xl outline-none focus:border-indigo-500" value="0" placeholder="e.g. 50 or -20">
                                 <button type="button" onclick="window.stepXpOverride(10)" class="w-10 h-10 bg-emerald-50 border border-emerald-200 text-emerald-600 font-black rounded-xl hover:bg-emerald-100 transition-colors text-lg">+</button>
                             </div>
-                            <p class="text-[10px] text-slate-400 font-medium mt-2 text-center">Positive = boost rank · Negative = reduce rank · 0 = remove adjustment</p>
+                            <p class="text-[10px] text-slate-400 font-medium mt-2 text-center">Positive = boost rank · Negative = reduce rank · 0 = reset to earned XP</p>
                         </div>
                         <div>
-                            <label class="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2">Reason <span class="normal-case font-medium text-rose-500">* required</span></label>
-                            <textarea id="xp-override-reason" rows="3" placeholder="e.g. Bonus for participation in extra session, Penalty for misconduct…" class="w-full px-4 py-3 rounded-xl bg-slate-50 border-2 border-slate-200 font-medium text-sm outline-none focus:border-indigo-500 resize-none"></textarea>
+                            <label class="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2">Reason <span class="text-rose-500">*</span></label>
+                            <textarea id="xp-override-reason" rows="2" placeholder="e.g. Bonus for participation, correction for duplicate entry…"
+                                class="w-full px-4 py-3 rounded-xl bg-slate-50 border-2 border-slate-200 font-medium text-sm outline-none focus:border-indigo-500 resize-none"></textarea>
+                            <p class="text-[10px] text-slate-400 font-medium mt-1">Required — this reason is visible to the student on their profile.</p>
+                        </div>
+                        <!-- Previous override info (shown if one already exists) -->
+                        <div id="xp-override-prev-info" class="hidden p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-500 space-y-0.5">
+                            <div class="text-[10px] uppercase tracking-widest text-slate-400 mb-1">Current Override</div>
+                            <div id="xp-override-prev-val" class="text-slate-700"></div>
+                            <div id="xp-override-prev-reason" class="text-slate-500 font-medium"></div>
+                            <div id="xp-override-prev-by" class="text-slate-400"></div>
                         </div>
                         <div class="flex gap-3 pt-2">
                             <button onclick="window.closeXpOverrideModal()" class="flex-1 py-3 bg-slate-100 text-slate-700 font-bold rounded-xl hover:bg-slate-200 transition-colors">Cancel</button>
                             <button onclick="window.saveXpOverride()" class="flex-1 py-3 bg-indigo-600 text-white font-black rounded-xl hover:bg-indigo-700 transition-colors shadow-md">Save Override</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== EDIT MARKS MODAL ===== -->
+            <div id="modal-edit-marks" class="hidden-view fixed inset-0 z-[80] bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4">
+                <div class="bg-white w-full max-w-sm rounded-3xl shadow-2xl overflow-hidden">
+                    <div class="p-6 border-b border-slate-200 bg-gradient-to-r from-emerald-50 to-teal-50 flex justify-between items-center">
+                        <div>
+                            <h3 class="text-lg font-black text-slate-900">📝 Edit Marks</h3>
+                            <p class="text-xs text-slate-500 font-bold mt-1" id="edit-marks-quiz-title">Test Name</p>
+                        </div>
+                        <button onclick="window.closeEditMarksModal()" class="w-8 h-8 flex items-center justify-center bg-white hover:bg-rose-100 hover:text-rose-600 rounded-full font-bold transition-colors border border-slate-200">✕</button>
+                    </div>
+                    <div class="p-6 space-y-5">
+                        <div class="p-4 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 font-bold leading-relaxed">
+                            ⚠️ This directly edits the score stored in this exam result. The student's XP and leaderboard position will update immediately.
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2">New Score</label>
+                                <input type="number" id="edit-marks-score" min="0" class="w-full px-4 py-3 rounded-xl bg-slate-50 border-2 border-slate-200 font-black text-center text-xl outline-none focus:border-emerald-500" placeholder="0">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2">Out Of</label>
+                                <input type="number" id="edit-marks-total" min="0" class="w-full px-4 py-3 rounded-xl bg-slate-50 border-2 border-slate-200 font-black text-center text-xl outline-none focus:border-emerald-500" placeholder="0">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2">Reason for Edit <span class="text-rose-500">*</span></label>
+                            <textarea id="edit-marks-reason" rows="2" placeholder="e.g. Marking error corrected, grace marks awarded…"
+                                class="w-full px-4 py-3 rounded-xl bg-slate-50 border-2 border-slate-200 font-medium text-sm outline-none focus:border-emerald-500 resize-none"></textarea>
+                            <p class="text-[10px] text-slate-400 font-medium mt-1">Required — logged in audit trail and visible to the student.</p>
+                        </div>
+                        <!-- Previous edit note -->
+                        <div id="edit-marks-prev-info" class="hidden p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-500 space-y-0.5">
+                            <div class="text-[10px] uppercase tracking-widest text-slate-400 mb-1">Previous Edit</div>
+                            <div id="edit-marks-prev-detail" class="text-slate-600 font-bold"></div>
+                            <div id="edit-marks-prev-reason" class="text-slate-500"></div>
+                            <div id="edit-marks-prev-by" class="text-slate-400"></div>
+                        </div>
+                        <div class="flex gap-3 pt-2">
+                            <button onclick="window.closeEditMarksModal()" class="flex-1 py-3 bg-slate-100 text-slate-700 font-bold rounded-xl hover:bg-slate-200 transition-colors">Cancel</button>
+                            <button onclick="window.saveEditedMarks()" class="flex-1 py-3 bg-emerald-600 text-white font-black rounded-xl hover:bg-emerald-700 transition-colors shadow-md">Save Marks</button>
                         </div>
                     </div>
                 </div>
@@ -995,38 +1058,18 @@
                 }
             };
             await initAuth();
-            onAuthStateChanged(auth, (authUser) => {
-                user = authUser;
-                initDataSync();
-            });
-            // Fallback: if Firestore never responds (Anonymous Auth disabled, offline, etc.)
-            // unlock the button after 4 seconds so fallback credentials still work
-            setTimeout(() => {
-                if (!configLoaded) {
-                    configLoaded = true;
-                    if (!globalData.config.admins) {
-                        globalData.config.admins = [{ email: 'syedibrahim530520@gmail.com', password: 'ibrahim' }];
-                    }
-                    const btn = document.getElementById('login-btn');
-                    if (btn) { btn.disabled = false; btn.innerText = 'Authenticate'; }
-                }
-            }, 4000);
+            onAuthStateChanged(auth, (authUser) => { user = authUser; initDataSync(); });
         };
 
         let isDataInit = false;
-        let unsubscribeConfig = null;
-        let configLoaded = false;
         const initDataSync = () => {
             if (isDataInit) return;
             isDataInit = true;
-
-            // Note: we do NOT disable the button here
-            // Fallback credentials work even before Firestore loads
             
             onSnapshot(getPublicDoc('admin_settings', 'config'), snap => {
                 if (snap.exists()) {
                     globalData.config = snap.data();
-                    if (!globalData.config.admins || globalData.config.admins.length === 0) {
+                    if (!globalData.config.admins) {
                         globalData.config.admins = [{ email: 'syedibrahim530520@gmail.com', password: 'ibrahim' }];
                         setDoc(getPublicDoc('admin_settings', 'config'), globalData.config, { merge: true });
                     }
@@ -1041,21 +1084,7 @@
                     };
                     setDoc(getPublicDoc('admin_settings', 'config'), globalData.config).catch(e => console.warn("Could not create default config:", e));
                 }
-                // Config is now loaded — enable the login button
-                if (!configLoaded) {
-                    configLoaded = true;
-                    const btn = document.getElementById('login-btn');
-                    if (btn) { btn.disabled = false; btn.innerText = 'Authenticate'; }
-                }
-            }, err => {
-                console.error("Config sync error:", err);
-                // Even on error, unblock login so fallback credentials still work
-                if (!configLoaded) {
-                    configLoaded = true;
-                    const btn = document.getElementById('login-btn');
-                    if (btn) { btn.disabled = false; btn.innerText = 'Authenticate'; }
-                }
-            });
+            }, err => console.error("Config sync error:", err));
         };
 
         // ========================
@@ -1082,13 +1111,8 @@
                 return;
             }
 
-            // Always ensure fallback admin exists
-            const FALLBACK_ADMINS = [{ email: 'syedibrahim530520@gmail.com', password: 'ibrahim' }];
-            const adminsList = (globalData.config.admins && globalData.config.admins.length > 0)
-                ? globalData.config.admins
-                : FALLBACK_ADMINS;
-            const match = adminsList.find(a => a.email.toLowerCase() === email && a.password === pwd)
-                       || FALLBACK_ADMINS.find(a => a.email.toLowerCase() === email && a.password === pwd);
+            const adminsList = globalData.config.admins || [{ email: 'syedibrahim530520@gmail.com', password: 'ibrahim' }];
+            const match = adminsList.find(a => a.email.toLowerCase() === email && a.password === pwd);
 
             if (match) {
                 loginAttempts = 0;
@@ -1262,7 +1286,7 @@
             });
             const sorted = Object.entries(xpMap).map(([id, xp]) => {
                 const user = globalData.users.find(u => u.id === id);
-                return { id, name: user?.name || 'Unknown', xp: Math.max(0, xp), override: user?.xpOverride || 0, reason: user?.xpOverrideReason || '', overrideBy: user?.xpOverrideBy || '', overrideAt: user?.xpOverrideAt || null };
+                return { id, name: user?.name || 'Unknown', xp: Math.max(0, xp), override: user?.xpOverride || 0 };
             }).sort((a, b) => b.xp - a.xp);
 
             const lbEl = document.getElementById('dash-leaderboard');
@@ -1272,11 +1296,11 @@
                     <div class="flex items-center gap-2 flex-1 min-w-0">
                         <span class="text-lg flex-shrink-0">${rankLabel(i)}</span>
                         <span class="font-bold text-slate-800 text-sm truncate">${u.name}</span>
-                        ${u.override !== 0 ? `<span class="text-[10px] font-black px-1.5 py-0.5 rounded cursor-help ${u.override > 0 ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-600'} flex-shrink-0" title="${u.reason || 'Admin adjusted'}${u.overrideBy ? ' · by ' + u.overrideBy : ''}">${u.override > 0 ? '+' : ''}${u.override} adj</span>` : ''}
+                        ${u.override !== 0 ? `<span class="text-[10px] font-black px-1.5 py-0.5 rounded ${u.override > 0 ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-600'} flex-shrink-0">${u.override > 0 ? '+' : ''}${u.override}</span>` : ''}
                     </div>
                     <div class="flex items-center gap-2">
                         <span class="font-black text-indigo-600 text-sm">${u.xp} XP</span>
-                        <button onclick="window.openXpOverrideModal('${u.id}', '${u.name.replace(/'/g,"\\'")}', ${u.override}, '${(u.reason||"").replace(/'/g,"\\'").replace(/\n/g," ")}')" class="opacity-0 group-hover:opacity-100 transition-opacity px-2 py-1 bg-indigo-50 text-indigo-600 font-bold rounded-lg text-[10px] hover:bg-indigo-100 flex-shrink-0" title="Adjust XP">✏️</button>
+                        <button onclick="window.openXpOverrideModal('${u.id}', '${u.name.replace(/'/g,"\\'")}', ${u.override})" class="opacity-0 group-hover:opacity-100 transition-opacity px-2 py-1 bg-indigo-50 text-indigo-600 font-bold rounded-lg text-[10px] hover:bg-indigo-100 flex-shrink-0" title="Adjust XP">✏️</button>
                     </div>
                 </div>`).join('') : `<div class="text-slate-400 text-sm font-bold text-center py-4">No data yet.</div>`;
 
@@ -1395,7 +1419,7 @@
                         <div class="flex items-center gap-1.5 flex-wrap mt-0.5">
                             <span class="font-black text-indigo-600">${xp + (u.xpOverride || 0)} XP</span>
                             ${u.xpOverride && u.xpOverride !== 0 ? `<span class="text-[10px] font-black px-1.5 py-0.5 rounded cursor-help ${u.xpOverride > 0 ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-600'}" title="${u.xpOverrideReason || 'Admin adjusted'}${u.xpOverrideBy ? ' · by ' + u.xpOverrideBy : ''}">${u.xpOverride > 0 ? '+' : ''}${u.xpOverride} adj</span>` : ''}
-                            <button onclick="window.openXpOverrideModal('${u.id}', '${(u.name||'').replace(/'/g,"\\'")}', ${u.xpOverride || 0}, '${(u.xpOverrideReason||'').replace(/'/g,"\\'").replace(/\\n/g,' ')}')" class="text-[10px] font-bold text-slate-400 hover:text-indigo-600 transition-colors" title="Adjust XP for leaderboard">✏️</button>
+                            <button onclick="window.openXpOverrideModal('${u.id}', '${(u.name||'').replace(/'/g,"\\'")}', ${u.xpOverride || 0}, '${(u.xpOverrideReason||'').replace(/'/g,"\\'").replace(/\n/g,' ')}', '${(u.xpOverrideBy||'').replace(/'/g,"\\'")}', ${u.xpOverrideAt||'null'})" class="text-[10px] font-bold text-slate-400 hover:text-indigo-600 transition-colors" title="Adjust XP for leaderboard">✏️</button>
                         </div>
                     </td>
                     <td class="px-6 py-4 text-sm text-slate-400 font-medium">${joined}</td>
@@ -1412,11 +1436,11 @@
         window.filterStudents = () => renderStudents();
 
         window.exportStudentsCSV = () => {
-            const rows = [['Name', 'Enrollment ID', 'Email', 'Phone', 'Tests Taken', 'Earned XP', 'XP Adjustment', 'Total XP', 'Adjustment Reason']];
+            const rows = [['Name', 'Enrollment ID', 'Email', 'Phone', 'Tests Taken', 'Total XP']];
             globalData.users.forEach(u => {
                 const userResults = globalData.results.filter(r => r.studentId === u.id);
                 const xp = userResults.reduce((s, r) => s + (r.score || 0), 0);
-                const adj = u.xpOverride || 0; rows.push([u.name, u.enrollmentId || '', u.email || '', u.phone || '', userResults.length, xp, adj, xp + adj, u.xpOverrideReason || '']);
+                rows.push([u.name, u.enrollmentId || '', u.email || '', u.phone || '', userResults.length, xp]);
             });
             const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
             const a = document.createElement('a');
@@ -1448,23 +1472,25 @@
             const results = globalData.results.filter(r => r.studentId === studentId).sort((a, b) => b.timestamp - a.timestamp);
             const listEl = document.getElementById('sr-modal-list');
 
-            // XP summary shown at top of results modal
-            const earnedXP = results.reduce((s, r) => s + (r.score || 0), 0);
+            // XP override summary block at top
             const adjXP = student.xpOverride || 0;
+            const earnedXP = results.reduce((s, r) => s + (r.score || 0), 0);
             const totalXP = earnedXP + adjXP;
             const xpSummaryBlock = `<div class="mb-4 p-4 bg-indigo-50 border border-indigo-200 rounded-2xl">
                 <div class="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-2">XP Summary</div>
                 <div class="flex flex-wrap gap-4 items-center justify-between">
                     <div class="flex flex-wrap gap-3 items-center text-sm font-bold">
                         <span class="text-slate-600">Earned: <span class="text-indigo-600">${earnedXP} XP</span></span>
-                        ${adjXP !== 0 ? \`<span class="${adjXP > 0 ? 'text-emerald-600' : 'text-rose-600'}">Adj: \${adjXP > 0 ? '+' : ''}\${adjXP} XP</span>\` : ''}
-                        <span class="text-slate-900">Total: <strong class="text-indigo-700">\${totalXP} XP</strong></span>
+                        ${adjXP !== 0 ? `<span class="${adjXP > 0 ? 'text-emerald-600' : 'text-rose-600'}">Adj: ${adjXP > 0 ? '+' : ''}${adjXP} XP</span>` : ''}
+                        <span class="text-slate-900">Total: <strong class="text-indigo-700">${totalXP} XP</strong></span>
                     </div>
-                    <button onclick="window.openXpOverrideModal('${studentId}', '${student.name.replace(/'/g, "\\'")}', \${adjXP}, '\${(student.xpOverrideReason||'').replace(/'/g,\"\\'\").replace(/\n/g,' ')}')" class="px-3 py-1.5 bg-white border border-indigo-200 text-indigo-600 font-bold rounded-lg text-xs hover:bg-indigo-100 transition-colors">✏️ Adjust</button>
+                    <button onclick="window.openXpOverrideModal('${studentId}', '${(student.name||'').replace(/'/g,"\\'")}', ${adjXP}, '${(student.xpOverrideReason||'').replace(/'/g,"\\'").replace(/\n/g,' ')}', '${(student.xpOverrideBy||'').replace(/'/g,"\\'")}', ${student.xpOverrideAt||'null'})"
+                        class="px-3 py-1.5 bg-white border border-indigo-200 text-indigo-600 font-bold rounded-lg text-xs hover:bg-indigo-100 transition-colors">✏️ Adjust XP</button>
                 </div>
-                ${adjXP !== 0 && student.xpOverrideReason ? \`<div class="mt-3 pt-3 border-t border-indigo-100 text-xs text-slate-600"><span class="font-black">Reason:</span> \${student.xpOverrideReason}\${student.xpOverrideBy ? \` <span class='text-slate-400 font-medium'>· by \${student.xpOverrideBy}\${student.xpOverrideAt ? ' on ' + new Date(student.xpOverrideAt).toLocaleDateString() : ''}</span>\` : ''}</div>\` : ''}
+                ${adjXP !== 0 && student.xpOverrideReason ? `<div class="mt-3 pt-3 border-t border-indigo-100 text-xs text-slate-600"><span class="font-black">Reason:</span> ${student.xpOverrideReason}${student.xpOverrideBy ? ` <span class='text-slate-400 font-medium'>· by ${student.xpOverrideBy}${student.xpOverrideAt ? ' on ' + new Date(student.xpOverrideAt).toLocaleDateString() : ''}</span>` : ''}</div>` : ''}
             </div>`;
-            listEl.innerHTML = (xpSummaryBlock) + (results.length === 0
+
+            listEl.innerHTML = xpSummaryBlock + (results.length === 0
                 ? `<div class="text-center p-8 text-slate-400 font-bold">No exam attempts yet.</div>`
                 : results.map(r => {
                     const quiz = globalData.quizzes.find(q => q.id === r.testId);
@@ -1472,16 +1498,32 @@
                     const pct = r.totalPossible ? Math.round((r.score / r.totalPossible) * 100) : 0;
                     const threshold = globalData.config.passThreshold ?? 60;
                     const passed = pct >= threshold;
+                    const wasEdited = !!r.editedAt;
+                    const editedBadge = wasEdited
+                        ? `<span class="text-[10px] font-black px-2 py-0.5 bg-violet-100 text-violet-700 rounded-lg" title="Edited by ${r.editedBy||'admin'} — ${r.editReason||''}">✏️ Edited</span>`
+                        : '';
+                    // Escape strings for inline onclick
+                    const safeTitle = quizTitle.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                    const safeReason = (r.editReason||'').replace(/'/g, "\\'").replace(/\n/g,' ');
+                    const safeBy = (r.editedBy||'').replace(/'/g, "\\'");
                     return `
-                    <div class="p-4 border border-slate-200 rounded-2xl flex justify-between items-center bg-slate-50">
-                        <div>
-                            <div class="font-black text-slate-800">${quizTitle}</div>
-                            <div class="text-xs text-slate-500 font-medium">${new Date(r.timestamp).toLocaleString()}</div>
-                        </div>
-                        <div class="flex items-center gap-3">
-                            <span class="text-xs font-black px-2 py-0.5 rounded-lg ${passed ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}">${passed ? 'PASS' : 'FAIL'}</span>
-                            <span class="px-3 py-1 bg-emerald-100 text-emerald-800 rounded-lg font-black text-sm">${r.score} / ${r.totalPossible} (${pct}%)</span>
-                            <button onclick="window.deleteStudentResult('${r.id}', '${studentId}')" class="w-8 h-8 flex items-center justify-center bg-rose-100 text-rose-600 rounded-lg hover:bg-rose-200 font-bold">🗑️</button>
+                    <div class="p-4 border border-slate-200 rounded-2xl bg-slate-50">
+                        <div class="flex justify-between items-start gap-3 flex-wrap">
+                            <div>
+                                <div class="font-black text-slate-800">${quizTitle}</div>
+                                <div class="text-xs text-slate-500 font-medium">${new Date(r.timestamp).toLocaleString()}</div>
+                                ${wasEdited ? `<div class="text-[10px] text-violet-600 font-bold mt-1">✏️ Marks edited by ${r.editedBy||'admin'}${r.editedAt ? ' on ' + new Date(r.editedAt).toLocaleDateString() : ''}</div>` : ''}
+                                ${wasEdited && r.editReason ? `<div class="text-[10px] text-slate-500 font-medium">Reason: ${r.editReason}</div>` : ''}
+                                ${wasEdited && r.originalScore != null ? `<div class="text-[10px] text-slate-400">Original: ${r.originalScore} / ${r.originalTotal}</div>` : ''}
+                            </div>
+                            <div class="flex items-center gap-2 flex-wrap justify-end">
+                                <span class="text-xs font-black px-2 py-0.5 rounded-lg ${passed ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}">${passed ? 'PASS' : 'FAIL'}</span>
+                                ${editedBadge}
+                                <span class="px-3 py-1 bg-emerald-100 text-emerald-800 rounded-lg font-black text-sm">${r.score} / ${r.totalPossible} (${pct}%)</span>
+                                <button onclick="window.openEditMarksModal('${r.id}', '${studentId}', '${safeTitle}', ${r.score}, ${r.totalPossible}, '${safeReason}', '${safeBy}', ${r.editedAt||'null'})"
+                                    class="px-3 py-1.5 bg-violet-50 text-violet-700 font-bold rounded-lg hover:bg-violet-100 transition-colors text-xs border border-violet-200">✏️ Edit</button>
+                                <button onclick="window.deleteStudentResult('${r.id}', '${studentId}')" class="w-8 h-8 flex items-center justify-center bg-rose-100 text-rose-600 rounded-lg hover:bg-rose-200 font-bold">🗑️</button>
+                            </div>
                         </div>
                     </div>`;
                 }).join(''));
@@ -1504,17 +1546,119 @@
         // ========================
         let _xpOverrideStudentId = null;
 
-        window.openXpOverrideModal = (studentId, studentName, currentOverride, currentReason) => {
+        window.openXpOverrideModal = (studentId, studentName, currentOverride, currentReason, overrideBy, overrideAt) => {
             _xpOverrideStudentId = studentId;
             document.getElementById('xp-override-student-name').innerText = studentName;
             document.getElementById('xp-override-value').value = currentOverride || 0;
-            document.getElementById('xp-override-reason').value = currentReason || '';
+            document.getElementById('xp-override-reason').value = '';
+            document.getElementById('xp-override-reason').classList.remove('border-rose-400');
+
+            // Show previous override details if exists
+            const prevInfo = document.getElementById('xp-override-prev-info');
+            if (currentOverride && currentOverride !== 0) {
+                const label = currentOverride > 0 ? `+${currentOverride}` : `${currentOverride}`;
+                document.getElementById('xp-override-prev-val').innerText = `Adjustment: ${label} XP`;
+                document.getElementById('xp-override-prev-reason').innerText = currentReason ? `Reason: ${currentReason}` : 'No reason recorded';
+                document.getElementById('xp-override-prev-by').innerText = overrideBy
+                    ? `By ${overrideBy}${overrideAt ? ' on ' + new Date(overrideAt).toLocaleDateString() : ''}`
+                    : '';
+                prevInfo.classList.remove('hidden');
+            } else {
+                prevInfo.classList.add('hidden');
+            }
             document.getElementById('modal-xp-override').classList.remove('hidden-view');
         };
 
         window.closeXpOverrideModal = () => {
             _xpOverrideStudentId = null;
+            document.getElementById('xp-override-reason').value = '';
+            document.getElementById('xp-override-reason').classList.remove('border-rose-400');
             document.getElementById('modal-xp-override').classList.add('hidden-view');
+        };
+
+        // ========================
+        // EDIT MARKS (direct result score edit)
+        // ========================
+        let _editMarksResultId = null;
+        let _editMarksStudentId = null;
+
+        window.openEditMarksModal = (resultId, studentId, quizTitle, currentScore, currentTotal, prevReason, prevBy, prevAt) => {
+            _editMarksResultId = resultId;
+            _editMarksStudentId = studentId;
+            document.getElementById('edit-marks-quiz-title').innerText = quizTitle;
+            document.getElementById('edit-marks-score').value = currentScore;
+            document.getElementById('edit-marks-total').value = currentTotal;
+            document.getElementById('edit-marks-reason').value = '';
+            document.getElementById('edit-marks-reason').classList.remove('border-rose-400');
+
+            const prevInfo = document.getElementById('edit-marks-prev-info');
+            if (prevReason) {
+                document.getElementById('edit-marks-prev-detail').innerText = `Was: ${currentScore} / ${currentTotal}`;
+                document.getElementById('edit-marks-prev-reason').innerText = `Reason: ${prevReason}`;
+                document.getElementById('edit-marks-prev-by').innerText = prevBy
+                    ? `By ${prevBy}${prevAt ? ' on ' + new Date(prevAt).toLocaleDateString() : ''}`
+                    : '';
+                prevInfo.classList.remove('hidden');
+            } else {
+                prevInfo.classList.add('hidden');
+            }
+            document.getElementById('modal-edit-marks').classList.remove('hidden-view');
+        };
+
+        window.closeEditMarksModal = () => {
+            _editMarksResultId = null;
+            _editMarksStudentId = null;
+            document.getElementById('edit-marks-reason').value = '';
+            document.getElementById('edit-marks-reason').classList.remove('border-rose-400');
+            document.getElementById('modal-edit-marks').classList.add('hidden-view');
+        };
+
+        window.saveEditedMarks = async () => {
+            if (!_editMarksResultId) return;
+            const newScore = parseInt(document.getElementById('edit-marks-score').value);
+            const newTotal = parseInt(document.getElementById('edit-marks-total').value);
+            const reason = document.getElementById('edit-marks-reason').value.trim();
+            const reasonEl = document.getElementById('edit-marks-reason');
+
+            if (isNaN(newScore) || isNaN(newTotal) || newScore < 0 || newTotal < 0) {
+                return alert("Please enter valid score and total values.");
+            }
+            if (newScore > newTotal) {
+                return alert("Score cannot be greater than total marks.");
+            }
+            if (!reason) {
+                reasonEl.classList.add('border-rose-400');
+                reasonEl.focus();
+                return;
+            }
+            reasonEl.classList.remove('border-rose-400');
+
+            const result = globalData.results.find(r => r.id === _editMarksResultId);
+            const student = globalData.users.find(u => u.id === _editMarksStudentId);
+            const quiz = globalData.quizzes.find(q => q.id === result?.testId);
+            const oldScore = result?.score ?? '?';
+            const oldTotal = result?.totalPossible ?? '?';
+
+            try {
+                await updateDoc(getPublicDoc('exam_results', _editMarksResultId), {
+                    score: newScore,
+                    totalPossible: newTotal,
+                    editedScore: newScore,
+                    editedTotal: newTotal,
+                    editReason: reason,
+                    editedBy: currentAdminEmail,
+                    editedAt: Date.now(),
+                    originalScore: result?.originalScore ?? oldScore,
+                    originalTotal: result?.originalTotal ?? oldTotal
+                });
+                addAuditEntry('success',
+                    `Marks edited for ${student?.name || _editMarksStudentId} [${student?.enrollmentId || '—'}] on "${quiz?.title || 'Deleted Test'}": ${oldScore}/${oldTotal} → ${newScore}/${newTotal} — Reason: "${reason}" — by ${currentAdminEmail}`
+                );
+                showToast(`Marks updated: ${newScore} / ${newTotal} ✓`);
+                window.closeEditMarksModal();
+                // Refresh the results modal to reflect new score
+                setTimeout(() => window.viewStudentResults(_editMarksStudentId), 300);
+            } catch(e) { console.error(e); alert("Failed to save marks. Check connection."); }
         };
 
         window.stepXpOverride = (delta) => {
@@ -1527,12 +1671,14 @@
             const val = parseInt(document.getElementById('xp-override-value').value) || 0;
             const reason = document.getElementById('xp-override-reason').value.trim();
             const reasonEl = document.getElementById('xp-override-reason');
+
             if (!reason) {
                 reasonEl.classList.add('border-rose-400');
                 reasonEl.focus();
-                return alert("Please enter a reason for this XP adjustment.");
+                return;
             }
             reasonEl.classList.remove('border-rose-400');
+
             const student = globalData.users.find(u => u.id === _xpOverrideStudentId);
             if (!student) return alert("Student not found.");
             try {
@@ -1542,7 +1688,7 @@
                 await updateDoc(getPublicDoc('exam_users', _xpOverrideStudentId), overrideData);
                 const label = val > 0 ? `+${val}` : `${val}`;
                 addAuditEntry('success', `XP Adjustment (${label}) for ${student.name} [${student.enrollmentId || _xpOverrideStudentId}] — Reason: "${reason}" — by ${currentAdminEmail}`);
-                showToast(`XP adjustment saved (${label} XP).`);
+                showToast(`XP override saved (${label} XP) — leaderboard updated.`);
                 window.closeXpOverrideModal();
             } catch(e) { console.error(e); alert("Failed to save XP override. Check connection."); }
         };
@@ -1564,10 +1710,29 @@
 
                 let winDisplay = '';
                 if (s.winner?.first) {
+                    const renderWinRow = (medal, w, isTop) => {
+                        if (!w) return '';
+                        const hasAdj = w.overrideXP != null && w.overrideXP !== 0;
+                        const xpLabel = hasAdj
+                            ? `${w.xp} XP <span class="text-[10px] font-medium text-amber-600">(${w.earnedXP} + ${w.overrideXP > 0 ? '+' : ''}${w.overrideXP} adj)</span>`
+                            : `${w.xp} XP`;
+                        if (isTop) {
+                            return `<div class="flex justify-between items-center bg-white/50 p-2 rounded-lg border border-amber-100">
+                                <span>${medal} ${w.name}</span>
+                                <span class="bg-amber-200 px-2 py-1 rounded-md text-xs">${xpLabel}</span>
+                            </div>`;
+                        }
+                        return `<div class="flex justify-between items-center p-1 text-slate-600">
+                            <span>${medal} ${w.name}</span>
+                            <span class="text-xs">${xpLabel}</span>
+                        </div>`;
+                    };
+                    const anyAdj = [s.winner.first, s.winner.second, s.winner.third].some(w => w?.overrideXP != null && w?.overrideXP !== 0);
                     winDisplay = `<div class="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-xl text-amber-900 text-sm font-bold flex flex-col gap-2">
-                        <div class="flex justify-between items-center bg-white/50 p-2 rounded-lg border border-amber-100"><span>🥇 1st: ${s.winner.first.name}</span><span class="bg-amber-200 px-2 py-1 rounded-md text-xs">${s.winner.first.xp} XP</span></div>
-                        ${s.winner.second ? `<div class="flex justify-between items-center p-1 text-slate-600"><span>🥈 2nd: ${s.winner.second.name}</span><span class="text-xs">${s.winner.second.xp} XP</span></div>` : ''}
-                        ${s.winner.third ? `<div class="flex justify-between items-center p-1 text-slate-600"><span>🥉 3rd: ${s.winner.third.name}</span><span class="text-xs">${s.winner.third.xp} XP</span></div>` : ''}
+                        ${anyAdj ? `<div class="text-[10px] font-black text-amber-600 uppercase tracking-widest mb-1">⚡ Admin-adjusted XP included in rankings</div>` : ''}
+                        ${renderWinRow('🥇', s.winner.first, true)}
+                        ${renderWinRow('🥈', s.winner.second, false)}
+                        ${renderWinRow('🥉', s.winner.third, false)}
                     </div>`;
                 }
 
@@ -1610,6 +1775,7 @@
         };
 
         // Enhanced tie-breaker draw logic — uses actual student IDs from DB
+        // ✅ UPGRADED: xpOverride (admin-edited XP) is included in season winner calculation
         window.announceSeasonWinner = async (seasonId) => {
             const s = globalData.seasons.find(x => x.id === seasonId);
             if (!s) return;
@@ -1618,24 +1784,21 @@
             const validRes = globalData.results.filter(r => r.timestamp >= s.start && r.timestamp <= s.end);
             validRes.forEach(r => { stats[r.studentId] = (stats[r.studentId] || 0) + r.score; });
 
-            // Apply admin XP overrides — same as season leaderboard on user side
-            globalData.users.forEach(u => {
-                const override = u.xpOverride || 0;
-                if (override !== 0 && stats[u.id] !== undefined) {
-                    stats[u.id] = Math.max(0, stats[u.id] + override);
-                }
-            });
-
             if (Object.keys(stats).length === 0) return alert("No exams were taken during this season.");
 
+            // Include admin-adjusted XP (xpOverride) in total XP for fair ranking
             const sortedUsers = Object.keys(stats).map(uid => {
-                const user = globalData.users.find(u => u.id === uid);
+                const userObj = globalData.users.find(u => u.id === uid);
+                const earnedXP = stats[uid];
+                const overrideXP = userObj?.xpOverride || 0;
+                const totalXP = earnedXP + overrideXP;
                 return {
-                    id: uid,
-                    name: user?.name || 'Unknown',
-                    enrollmentId: user?.enrollmentId || null,
-                    xp: stats[uid],
-                    xpOverride: user?.xpOverride || 0
+                    id: uid, // ✅ ACTUAL Firestore document ID from exam_users
+                    name: userObj?.name || 'Unknown',
+                    enrollmentId: userObj?.enrollmentId || null,
+                    xp: totalXP,           // total XP (earned + override) used for ranking
+                    earnedXP: earnedXP,    // raw exam XP for display transparency
+                    overrideXP: overrideXP // admin adjustment for display transparency
                 };
             }).sort((a, b) => b.xp - a.xp);
 
@@ -1658,7 +1821,12 @@
                 if (p.users.length > 1) {
                     allDrawStudents.push(...p.users);
                     const suffix = p.rank === 1 ? 'st' : p.rank === 2 ? 'nd' : 'rd';
-                    const names = p.users.map(u => `${u.name}${u.enrollmentId ? ` [${u.enrollmentId}]` : ''} (${u.xp} XP${u.xpOverride && u.xpOverride !== 0 ? `, ${u.xpOverride > 0 ? '+' : ''}${u.xpOverride} adj` : ''})`).join(', ');
+                    const names = p.users.map(u => {
+                        const xpDetail = u.overrideXP !== 0
+                            ? `${u.xp} XP [${u.earnedXP} earned ${u.overrideXP > 0 ? '+' : ''}${u.overrideXP} adj]`
+                            : `${u.xp} XP`;
+                        return `${u.name}${u.enrollmentId ? ` [${u.enrollmentId}]` : ''} (${xpDetail})`;
+                    }).join(', ');
                     drawDetails.push(`${p.rank}${suffix} Place Draw: ${names}`);
                 }
             });
@@ -1688,18 +1856,36 @@
             const rank1 = positionAssignments[0]?.users || [];
             const rank2 = positionAssignments[1]?.users || [];
             const rank3 = positionAssignments[2]?.users || [];
-            const adjLabel = (u) => u.xpOverride && u.xpOverride !== 0 ? ` (${u.xpOverride > 0 ? '+' : ''}${u.xpOverride} adj)` : '';
-            let summary = `Clear Winners Found!\n\n`;
-            if (rank1[0]) summary += `🥇 1st: ${rank1[0].name} — ${rank1[0].xp} XP${adjLabel(rank1[0])}\n`;
-            if (rank2[0]) summary += `🥈 2nd: ${rank2[0].name} — ${rank2[0].xp} XP${adjLabel(rank2[0])}\n`;
-            if (rank3[0]) summary += `🥉 3rd: ${rank3[0].name} — ${rank3[0].xp} XP${adjLabel(rank3[0])}\n`;
+
+            const formatXP = (u) => {
+                if (!u) return '';
+                if (u.overrideXP !== 0) {
+                    return `${u.xp} XP (${u.earnedXP} earned ${u.overrideXP > 0 ? '+' : ''}${u.overrideXP} admin adj)`;
+                }
+                return `${u.xp} XP`;
+            };
+
+            const hasAnyOverride = [rank1[0], rank2[0], rank3[0]].some(u => u && u.overrideXP !== 0);
+            let summary = `✅ Clear Winners Found!\n\n`;
+            if (rank1[0]) summary += `🥇 1st: ${rank1[0].name} — ${formatXP(rank1[0])}\n`;
+            if (rank2[0]) summary += `🥈 2nd: ${rank2[0].name} — ${formatXP(rank2[0])}\n`;
+            if (rank3[0]) summary += `🥉 3rd: ${rank3[0].name} — ${formatXP(rank3[0])}\n`;
+            if (hasAnyOverride) summary += `\n⚠️ Note: Admin-adjusted XP has been included in these rankings.\n`;
             summary += `\nFinalize and announce globally?`;
 
             if (confirm(summary)) {
+                const buildWinnerEntry = (u) => u ? {
+                    id: u.id,
+                    name: u.name,
+                    xp: u.xp,
+                    earnedXP: u.earnedXP,
+                    overrideXP: u.overrideXP
+                } : null;
+
                 const winnerObj = {
-                    first:  rank1[0] ? { id: rank1[0].id, name: rank1[0].name, xp: rank1[0].xp, xpOverride: rank1[0].xpOverride || 0 } : null,
-                    second: rank2[0] ? { id: rank2[0].id, name: rank2[0].name, xp: rank2[0].xp, xpOverride: rank2[0].xpOverride || 0 } : null,
-                    third:  rank3[0] ? { id: rank3[0].id, name: rank3[0].name, xp: rank3[0].xp, xpOverride: rank3[0].xpOverride || 0 } : null,
+                    first:  buildWinnerEntry(rank1[0]),
+                    second: buildWinnerEntry(rank2[0]),
+                    third:  buildWinnerEntry(rank3[0]),
                 };
                 winnerObj.id = rank1[0]?.id; winnerObj.name = rank1[0]?.name; winnerObj.xp = rank1[0]?.xp;
                 const announcedAt = Date.now();
@@ -1708,7 +1894,11 @@
                     updatedAt: announcedAt,
                     popupShownVersion: announcedAt // also drives the in-app "winners announced" popup on the user side
                 });
-                addAuditEntry('success', `Winners announced for season "${s.name}" by ${currentAdminEmail}`);
+                const auditParts = [];
+                if (rank1[0]) auditParts.push(`1st: ${rank1[0].name} (${rank1[0].xp} XP${rank1[0].overrideXP !== 0 ? `, incl. ${rank1[0].overrideXP > 0 ? '+' : ''}${rank1[0].overrideXP} adj` : ''})`);
+                if (rank2[0]) auditParts.push(`2nd: ${rank2[0].name} (${rank2[0].xp} XP${rank2[0].overrideXP !== 0 ? `, incl. ${rank2[0].overrideXP > 0 ? '+' : ''}${rank2[0].overrideXP} adj` : ''})`);
+                if (rank3[0]) auditParts.push(`3rd: ${rank3[0].name} (${rank3[0].xp} XP${rank3[0].overrideXP !== 0 ? `, incl. ${rank3[0].overrideXP > 0 ? '+' : ''}${rank3[0].overrideXP} adj` : ''})`);
+                addAuditEntry('success', `Winners announced for season "${s.name}" by ${currentAdminEmail} — ${auditParts.join(' | ')}`);
                 showToast("Winners Announced Globally! 🏆");
             }
         };
