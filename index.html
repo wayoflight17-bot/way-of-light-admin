@@ -997,15 +997,20 @@
             await initAuth();
             onAuthStateChanged(auth, (authUser) => {
                 user = authUser;
-                if (authUser) {
-                    initDataSync();
-                } else {
-                    // Auth not ready yet — ensure config fallback is available for login
+                initDataSync();
+            });
+            // Fallback: if Firestore never responds (Anonymous Auth disabled, offline, etc.)
+            // unlock the button after 4 seconds so fallback credentials still work
+            setTimeout(() => {
+                if (!configLoaded) {
+                    configLoaded = true;
                     if (!globalData.config.admins) {
                         globalData.config.admins = [{ email: 'syedibrahim530520@gmail.com', password: 'ibrahim' }];
                     }
+                    const btn = document.getElementById('login-btn');
+                    if (btn) { btn.disabled = false; btn.innerText = 'Authenticate'; }
                 }
-            });
+            }, 4000);
         };
 
         let isDataInit = false;
@@ -1015,12 +1020,8 @@
             if (isDataInit) return;
             isDataInit = true;
 
-            // Show loading state on login button until config arrives
-            const loginBtn = document.getElementById('login-btn');
-            if (loginBtn && !configLoaded) {
-                loginBtn.disabled = true;
-                loginBtn.innerText = 'Loading…';
-            }
+            // Note: we do NOT disable the button here
+            // Fallback credentials work even before Firestore loads
             
             onSnapshot(getPublicDoc('admin_settings', 'config'), snap => {
                 if (snap.exists()) {
