@@ -56,6 +56,29 @@
         /* Badge pulse for live counts */
         @keyframes pulse-badge { 0%,100% { opacity: 1; } 50% { opacity: 0.6; } }
         .live-badge { animation: pulse-badge 2s infinite; }
+
+        /* ===== MOBILE RESPONSIVE FIXES ===== */
+        @media (max-width: 768px) {
+            aside#admin-sidebar {
+                position: fixed; left: 0; top: 0; bottom: 0;
+                z-index: 200; transform: translateX(-100%);
+                transition: transform 0.28s cubic-bezier(.4,0,.2,1);
+                width: 260px !important;
+                box-shadow: 4px 0 24px rgba(0,0,0,0.12);
+            }
+            aside#admin-sidebar.open { transform: translateX(0); }
+            #sidebar-overlay {
+                display: none; position: fixed; inset: 0; z-index: 190;
+                background: rgba(15,23,42,0.45); backdrop-filter: blur(2px);
+            }
+            #sidebar-overlay.open { display: block; }
+            #mobile-menu-btn { display: flex !important; }
+            main#admin-main { padding: 16px !important; }
+        }
+        @media (min-width: 769px) {
+            #mobile-menu-btn { display: none !important; }
+            aside#admin-sidebar { position: relative !important; transform: none !important; box-shadow: none !important; }
+        }
     </style>
 </head>
 <body class="text-slate-800">
@@ -97,11 +120,18 @@
     <!-- Main App Layout -->
     <div id="admin-app" class="hidden-view flex h-screen overflow-hidden">
         
+        <!-- Mobile sidebar backdrop -->
+        <div id="sidebar-overlay" onclick="window.closeSidebar()"></div>
+
         <!-- Sidebar -->
-        <aside class="w-64 bg-white border-r border-slate-200 flex flex-col shrink-0">
+        <aside id="admin-sidebar" class="w-64 bg-white border-r border-slate-200 flex flex-col shrink-0">
             <div class="h-16 flex items-center px-6 border-b border-slate-200 gap-3">
                 <img id="sidebar-logo" src="" class="hidden w-8 h-8 rounded-lg object-cover">
                 <h1 class="font-black text-lg tracking-tight text-indigo-600" id="sidebar-title">Admin Control</h1>
+                <!-- Close button (mobile only) -->
+                <button onclick="window.closeSidebar()" class="ml-auto p-1.5 rounded-lg hover:bg-slate-100 text-slate-500 md:hidden" aria-label="Close menu">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
             </div>
             <nav class="flex-1 py-4 space-y-1">
                 <a href="#" onclick="window.switchTab('dashboard')" id="nav-dashboard" class="nav-item active flex items-center gap-3 px-6 py-3 text-sm font-bold text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors">
@@ -112,6 +142,11 @@
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
                     Student Records
                     <span id="nav-student-count" class="ml-auto bg-indigo-100 text-indigo-700 text-[10px] font-black px-2 py-0.5 rounded-full live-badge">0</span>
+                </a>
+                <a href="#" onclick="window.switchTab('certificates')" id="nav-certificates" class="nav-item flex items-center gap-3 px-6 py-3 text-sm font-bold text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+                    Certificates
+                    <span id="nav-cert-count" class="ml-auto bg-amber-100 text-amber-700 text-[10px] font-black px-2 py-0.5 rounded-full live-badge">0</span>
                 </a>
                 <a href="#" onclick="window.switchTab('quizzes')" id="nav-quizzes" class="nav-item flex items-center gap-3 px-6 py-3 text-sm font-bold text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/></svg>
@@ -124,6 +159,11 @@
                 <a href="#" onclick="window.switchTab('seasons')" id="nav-seasons" class="nav-item flex items-center gap-3 px-6 py-3 text-sm font-bold text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/></svg>
                     Seasons Management
+                </a>
+                <a href="#" onclick="window.switchTab('study')" id="nav-study" class="nav-item flex items-center gap-3 px-6 py-3 text-sm font-bold text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+                    Study Content
+                    <span id="nav-study-count" class="ml-auto bg-violet-100 text-violet-700 text-[10px] font-black px-2 py-0.5 rounded-full live-badge">0</span>
                 </a>
                 <a href="#" onclick="window.switchTab('audit')" id="nav-audit" class="nav-item flex items-center gap-3 px-6 py-3 text-sm font-bold text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
@@ -141,7 +181,14 @@
         </aside>
 
         <!-- Main Content Area -->
-        <main class="flex-1 overflow-y-auto p-8 relative">
+        <main id="admin-main" class="flex-1 overflow-y-auto p-8 relative">
+            <!-- Mobile top bar (hamburger + title) -->
+            <div class="sticky top-0 z-40 flex items-center gap-3 -mx-4 px-4 py-3 mb-4 bg-slate-100/95 backdrop-blur border-b border-slate-200 md:hidden">
+                <button id="mobile-menu-btn" onclick="window.openSidebar()" style="display:none" class="p-2 rounded-xl bg-white border border-slate-200 shadow-sm text-slate-700" aria-label="Open menu">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+                </button>
+                <span class="font-black text-slate-800 text-sm" id="mobile-section-title">Admin</span>
+            </div>
             
             <!-- Dashboard View -->
             <div id="view-dashboard" class="space-y-6">
@@ -173,13 +220,20 @@
                         <div class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Active Tests</div>
                         <div class="text-4xl font-black text-violet-500" id="stat-active-tests">0</div>
                     </div>
+                    <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                        <div class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">🎓 Certificates Issued</div>
+                        <div class="text-4xl font-black text-amber-600" id="stat-cert-issued">0</div>
+                    </div>
                 </div>
 
                 <!-- Quick Leaderboard + Recent Activity -->
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-                        <h3 class="font-black text-lg mb-4 text-slate-800">🏆 Top Students (All Time)</h3>
-                        <div id="dash-leaderboard" class="space-y-3">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="font-black text-lg text-slate-800">🏆 Leaderboard (All Students)</h3>
+                            <span class="text-[10px] font-bold text-slate-400 bg-slate-50 border border-slate-200 px-2 py-1 rounded-lg">Hover row → ✏️ edit XP</span>
+                        </div>
+                        <div id="dash-leaderboard" class="space-y-1">
                             <div class="text-slate-400 text-sm font-bold text-center py-4">No data yet.</div>
                         </div>
                     </div>
@@ -216,6 +270,124 @@
                     </table>
                     <div id="student-empty" class="hidden p-8 text-center text-slate-400 font-bold">No students found.</div>
                 </div>
+            </div>
+
+            <!-- Certificates View -->
+            <div id="view-certificates" class="hidden-view space-y-6">
+                <h2 class="text-3xl font-black text-slate-900">Certificate Issuance</h2>
+                <p class="text-slate-500 text-sm -mt-4">Every certificate gets a unique Certificate ID. Students see it on their portal, and it can be looked up to confirm a certificate is genuine and not duplicated.</p>
+
+                <!-- Issue New Certificate -->
+                <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+                    <h3 class="font-black text-lg text-slate-800 mb-4">Issue New Certificate</h3>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        <div>
+                            <label class="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2">Recipient Student</label>
+                            <div id="cert-selected-student" class="hidden mb-2 flex items-center justify-between p-3 bg-indigo-50 border border-indigo-200 rounded-xl">
+                                <div class="flex items-center gap-3">
+                                    <img id="cert-student-avatar" src="" class="w-8 h-8 rounded-full border border-indigo-200 bg-white object-cover">
+                                    <div>
+                                        <div class="font-bold text-slate-800 text-sm" id="cert-student-name">--</div>
+                                        <div class="text-[10px] font-mono text-indigo-500 font-black" id="cert-student-eid">--</div>
+                                    </div>
+                                </div>
+                                <button onclick="window.clearCertStudent()" type="button" class="text-rose-500 hover:text-rose-700 font-bold text-sm px-2">✕</button>
+                            </div>
+                            <div class="relative">
+                                <input type="text" id="cert-student-search" oninput="window.filterCertStudentPicker()" placeholder="🔍 Search student by name or enrollment ID…" class="w-full px-4 py-3 rounded-xl bg-slate-50 border-2 border-slate-100 focus:border-indigo-500 outline-none font-bold text-sm">
+                                <div id="cert-student-dropdown" class="hidden absolute z-30 w-full bg-white border border-slate-200 rounded-xl shadow-xl mt-1 max-h-52 overflow-y-auto"></div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2">Certificate ID</label>
+                            <div class="flex gap-2">
+                                <input type="text" id="cert-id-field" class="flex-1 px-4 py-3 rounded-xl bg-amber-50 border-2 border-amber-200 focus:border-amber-500 outline-none font-mono font-black text-sm tracking-wider">
+                                <button onclick="window.regenerateCertId()" type="button" class="px-4 py-3 bg-slate-100 hover:bg-slate-200 rounded-xl font-bold text-sm" title="Regenerate ID" data-tip="Regenerate ID">🔄</button>
+                            </div>
+                            <p class="text-[10px] text-slate-400 mt-1.5">Auto-generated &amp; checked for uniqueness. You can customize it before issuing.</p>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        <div>
+                            <label class="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2">Certificate Title / Course</label>
+                            <input type="text" id="cert-title" placeholder="e.g. Advanced Knowledge Mastery" class="w-full px-4 py-3 rounded-xl bg-slate-50 border-2 border-slate-100 focus:border-indigo-500 outline-none font-bold text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2">Issue Date</label>
+                            <input type="date" id="cert-issue-date" class="w-full px-4 py-3 rounded-xl bg-slate-50 border-2 border-slate-100 focus:border-indigo-500 outline-none font-bold text-sm">
+                        </div>
+                    </div>
+
+                    <div class="mb-6">
+                        <label class="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2">Description / Notes (optional)</label>
+                        <textarea id="cert-desc" rows="2" placeholder="Internal notes about this certificate…" class="w-full px-4 py-3 rounded-xl bg-slate-50 border-2 border-slate-100 focus:border-indigo-500 outline-none font-medium text-sm"></textarea>
+                    </div>
+
+                    <div class="mb-6">
+                        <label class="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2">🏆 Place Winner (optional)</label>
+                        <p class="text-[10px] text-slate-400 mb-3 font-medium">If this certificate is awarded for a competition win, select the placement. This will display a winner badge publicly on the student's profile and on the certificate.</p>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Winner Placement</label>
+                                <select id="cert-winner-place" class="w-full px-4 py-3 rounded-xl bg-slate-50 border-2 border-slate-100 focus:border-indigo-500 outline-none font-bold text-sm">
+                                    <option value="">— None (Regular Certificate) —</option>
+                                    <option value="first">🥇 1st Place Winner</option>
+                                    <option value="second">🥈 2nd Place Winner</option>
+                                    <option value="third">🥉 3rd Place Winner</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Season / Competition Name (if applicable)</label>
+                                <input type="text" id="cert-winner-season" placeholder="e.g. Winter 2026 Season" class="w-full px-4 py-3 rounded-xl bg-slate-50 border-2 border-slate-100 focus:border-indigo-500 outline-none font-bold text-sm">
+                            </div>
+                        </div>
+                        <div id="cert-winner-preview" class="hidden mt-3 p-3 rounded-xl border-2 border-amber-200 bg-amber-50 flex items-center gap-3">
+                            <span id="cert-winner-preview-medal" class="text-2xl">🏆</span>
+                            <div>
+                                <div id="cert-winner-preview-label" class="font-black text-amber-800 text-sm">1st Place Winner</div>
+                                <div id="cert-winner-preview-season" class="text-xs text-amber-600 font-bold"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-6">
+                        <label class="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2">Certificate File (Image or PDF)</label>
+                        <div class="flex items-center gap-4">
+                            <div id="cert-file-preview-wrap" class="w-24 h-24 rounded-xl bg-slate-50 border-2 border-dashed border-slate-200 flex items-center justify-center overflow-hidden shrink-0">
+                                <img id="cert-file-preview-img" src="" class="hidden w-full h-full object-cover">
+                                <span id="cert-file-preview-icon" class="text-2xl text-slate-300">📄</span>
+                            </div>
+                            <div>
+                                <label for="cert-file-input" class="cursor-pointer bg-slate-100 text-slate-700 text-xs font-bold px-4 py-2 rounded-lg hover:bg-slate-200 transition-colors border border-slate-300 inline-block">Choose File</label>
+                                <input type="file" id="cert-file-input" accept="image/*,.pdf" class="hidden" onchange="window.handleCertFileUpload(event)">
+                                <p class="text-[10px] text-slate-400 mt-2 font-medium" id="cert-file-name">No file selected. Images are compressed automatically; keep PDFs under ~700KB.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button onclick="window.issueCertificate()" class="w-full py-4 bg-emerald-500 text-white font-black text-lg rounded-2xl shadow-lg hover:bg-emerald-600 active:scale-[0.98] transition-all">
+                        🎓 Issue Certificate
+                    </button>
+                </div>
+
+                <!-- List -->
+                <div class="flex justify-between items-center flex-wrap gap-4">
+                    <h3 class="text-xl font-black text-slate-800">Issued Certificates</h3>
+                    <div class="flex gap-3 flex-wrap">
+                        <input type="text" id="cert-search" oninput="window.filterCertificates()" placeholder="Search by name, enrollment or cert ID…" class="px-4 py-2 rounded-xl bg-white border border-slate-200 font-bold text-sm outline-none focus:border-indigo-500 w-64">
+                        <select id="cert-status-filter" onchange="window.filterCertificates()" class="px-4 py-2 rounded-xl bg-white border border-slate-200 font-bold text-sm outline-none focus:border-indigo-500">
+                            <option value="all">All Status</option>
+                            <option value="active">Active Only</option>
+                            <option value="revoked">Revoked Only</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div id="cert-list" class="grid grid-cols-1 md:grid-cols-2 gap-6"></div>
+                <div id="cert-empty" class="hidden p-8 text-center text-slate-400 font-bold bg-white rounded-2xl border border-slate-200">No certificates issued yet.</div>
             </div>
 
             <!-- Results & Analytics View -->
@@ -292,6 +464,102 @@
                         <div class="text-slate-400 text-sm font-bold text-center py-4">No audit events recorded yet.</div>
                     </div>
                 </div>
+            </div>
+
+            <!-- ===== STUDY CONTENT VIEW ===== -->
+            <div id="view-study" class="hidden-view space-y-6 max-w-5xl">
+                <div>
+                    <h2 class="text-3xl font-black text-slate-900">Study Content</h2>
+                    <p class="text-slate-500 text-sm mt-1">Add Instagram posts and YouTube videos. Students can view everything inside the portal — no need to open Instagram or YouTube.</p>
+                </div>
+
+                <!-- Add New Content -->
+                <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-5">
+                    <h3 class="font-black text-lg text-slate-800">Add New Study Material</h3>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <div>
+                            <label class="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2">Content Type</label>
+                            <div class="flex gap-3">
+                                <label class="flex-1 flex items-center gap-3 p-3 border-2 border-slate-100 rounded-xl cursor-pointer hover:border-pink-300 transition-colors has-[:checked]:border-pink-500 has-[:checked]:bg-pink-50">
+                                    <input type="radio" name="sc-type" value="instagram" id="sc-type-insta" class="accent-pink-500" checked onchange="window.updateScTypeUI()">
+                                    <span class="text-sm font-black text-slate-700">📸 Instagram Post</span>
+                                </label>
+                                <label class="flex-1 flex items-center gap-3 p-3 border-2 border-slate-100 rounded-xl cursor-pointer hover:border-rose-400 transition-colors has-[:checked]:border-red-500 has-[:checked]:bg-red-50">
+                                    <input type="radio" name="sc-type" value="youtube" id="sc-type-yt" class="accent-red-500" onchange="window.updateScTypeUI()">
+                                    <span class="text-sm font-black text-slate-700">▶️ YouTube Video</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2">📅 Assign to Season <span class="normal-case font-medium text-slate-400">(required)</span></label>
+                            <select id="sc-season-id" class="w-full px-4 py-3 rounded-xl bg-slate-50 border-2 border-slate-100 focus:border-indigo-500 outline-none font-bold text-sm">
+                                <option value="">— No Season (General) —</option>
+                            </select>
+                            <p class="text-[10px] text-slate-400 font-medium mt-1">Active season appears at the top of the student study page.</p>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <div>
+                            <label class="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2">Category / Topic <span class="normal-case font-medium text-slate-400">(optional)</span></label>
+                            <input type="text" id="sc-category" placeholder="e.g. Chapter 1, Biology, Revision…" class="w-full px-4 py-3 rounded-xl bg-slate-50 border-2 border-slate-100 focus:border-indigo-500 outline-none font-bold text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2">Order / Position <span class="normal-case font-medium text-slate-400">(optional)</span></label>
+                            <input type="number" id="sc-order" min="1" placeholder="1, 2, 3… (controls display order)" class="w-full px-4 py-3 rounded-xl bg-slate-50 border-2 border-slate-100 focus:border-indigo-500 outline-none font-bold text-sm">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2">Title / Description</label>
+                        <input type="text" id="sc-title" placeholder="Short description of what students will learn…" class="w-full px-4 py-3 rounded-xl bg-slate-50 border-2 border-slate-100 focus:border-indigo-500 outline-none font-bold text-sm">
+                    </div>
+
+                    <!-- Instagram fields -->
+                    <div id="sc-insta-fields">
+                        <label class="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2">Instagram Post URL(s)</label>
+                        <p class="text-[11px] text-slate-400 font-medium mb-3">Paste the Instagram post link. If the post has multiple images (carousel), paste the main post URL — all slides will be embedded. Example: <code class="bg-slate-100 px-1 py-0.5 rounded text-slate-600">https://www.instagram.com/p/ABC123/</code></p>
+                        <div id="sc-insta-urls-list" class="space-y-2 mb-3"></div>
+                        <button onclick="window.addInstaUrlField()" type="button" class="px-4 py-2 bg-slate-100 text-slate-700 font-bold rounded-lg text-sm hover:bg-slate-200 transition-colors">+ Add Another Post URL</button>
+                        <p class="text-[10px] text-amber-600 font-bold mt-2 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">⚠️ Instagram embeds work for public posts only. Students must not be logged in / blocked. For best results use public Instagram accounts.</p>
+                    </div>
+
+                    <!-- YouTube fields -->
+                    <div id="sc-yt-fields" class="hidden">
+                        <label class="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2">YouTube Video URL</label>
+                        <p class="text-[11px] text-slate-400 font-medium mb-3">Paste any YouTube link — standard, short, or embed URL. Example: <code class="bg-slate-100 px-1 py-0.5 rounded text-slate-600">https://youtu.be/dQw4w9WgXcQ</code> or <code class="bg-slate-100 px-1 py-0.5 rounded text-slate-600">https://www.youtube.com/watch?v=dQw4w9WgXcQ</code></p>
+                        <input type="text" id="sc-yt-url" placeholder="https://www.youtube.com/watch?v=..." class="w-full px-4 py-3 rounded-xl bg-slate-50 border-2 border-slate-100 focus:border-red-500 outline-none font-bold text-sm">
+                        <div id="sc-yt-preview" class="hidden mt-3 rounded-2xl overflow-hidden border border-slate-200 shadow-sm aspect-video bg-slate-100">
+                            <iframe id="sc-yt-preview-frame" src="" class="w-full h-full" frameborder="0" allowfullscreen></iframe>
+                        </div>
+                    </div>
+
+                    <div class="flex gap-3 pt-2 border-t border-slate-100">
+                        <button onclick="window.previewStudyContent()" class="px-6 py-3 bg-slate-100 text-slate-700 font-bold rounded-xl hover:bg-slate-200 transition-colors text-sm">👁 Preview</button>
+                        <button onclick="window.saveStudyContent()" class="flex-1 py-3 bg-violet-600 text-white font-black rounded-xl shadow-md hover:bg-violet-700 active:scale-[0.98] transition-all">📚 Publish Study Material</button>
+                    </div>
+
+                    <!-- Preview area -->
+                    <div id="sc-admin-preview" class="hidden mt-2 p-4 bg-slate-50 border border-slate-200 rounded-2xl">
+                        <p class="text-xs font-black text-slate-400 uppercase tracking-widest mb-3">Preview</p>
+                        <div id="sc-admin-preview-content"></div>
+                    </div>
+                </div>
+
+                <!-- Filter + list -->
+                <div class="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
+                    <h3 class="text-xl font-black text-slate-800">Published Materials (<span id="sc-total-count">0</span>)</h3>
+                    <div class="flex gap-2 flex-wrap">
+                        <button onclick="window.filterStudy('all')" id="sc-filter-all" class="px-4 py-2 bg-slate-800 text-white font-bold rounded-xl text-sm">All</button>
+                        <button onclick="window.filterStudy('instagram')" id="sc-filter-instagram" class="px-4 py-2 bg-slate-100 text-slate-700 font-bold rounded-xl text-sm hover:bg-slate-200">📸 Instagram</button>
+                        <button onclick="window.filterStudy('youtube')" id="sc-filter-youtube" class="px-4 py-2 bg-slate-100 text-slate-700 font-bold rounded-xl text-sm hover:bg-slate-200">▶️ YouTube</button>
+                    </div>
+                </div>
+
+                <div id="sc-admin-list" class="space-y-4"></div>
+                <div id="sc-admin-empty" class="hidden p-10 text-center text-slate-400 font-bold bg-white rounded-2xl border border-slate-200">No study materials published yet.</div>
             </div>
 
             <!-- Settings View -->
@@ -419,6 +687,13 @@
                                     <input type="number" min="0" max="100" id="edit-quiz-passing" class="w-full px-4 py-3 rounded-xl bg-slate-50 border-2 border-slate-100 font-bold outline-none focus:border-indigo-500" placeholder="60">
                                 </div>
                             </div>
+                            <div>
+                                <label class="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2">📅 Assign to Season <span class="normal-case font-medium text-slate-400">(optional)</span></label>
+                                <select id="edit-quiz-season" class="w-full px-4 py-4 rounded-xl bg-slate-50 border-2 border-slate-100 font-bold outline-none focus:border-indigo-500">
+                                    <option value="">— No Season (General Test) —</option>
+                                </select>
+                                <p class="text-[10px] text-slate-400 font-medium mt-1">A season-linked test only appears on the student Home tab while that season is live. It stays attemptable from the Study tab afterwards too, but XP earned after the season ends won't count toward that season's Top 5 ranking — it still counts toward the all-time Top 10.</p>
+                            </div>
                         </div>
 
                         <!-- TIMING / AVAILABILITY CONTROL -->
@@ -469,7 +744,6 @@
                                 <option value="fill">Fill in the Blank</option>
                                 <option value="match">Matching Pairs</option>
                                 <option value="truefalse">True / False</option>
-                                <option value="short">Short Answer</option>
                             </select>
                         </div>
 
@@ -510,6 +784,55 @@
                 </div>
             </div>
 
+            <!-- ===== XP OVERRIDE MODAL ===== -->
+            <div id="modal-xp-override" class="hidden-view fixed inset-0 z-[70] bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4">
+                <div class="bg-white w-full max-w-sm rounded-3xl shadow-2xl overflow-hidden">
+                    <div class="p-6 border-b border-slate-200 bg-gradient-to-r from-indigo-50 to-violet-50 flex justify-between items-center">
+                        <div>
+                            <h3 class="text-lg font-black text-slate-900">✏️ Adjust XP</h3>
+                            <p class="text-xs text-slate-500 font-bold mt-1" id="xp-override-student-name">Student Name</p>
+                        </div>
+                        <button onclick="window.closeXpOverrideModal()" class="w-8 h-8 flex items-center justify-center bg-white hover:bg-rose-100 hover:text-rose-600 rounded-full font-bold transition-colors border border-slate-200">✕</button>
+                    </div>
+                    <div class="p-6 space-y-5">
+                        <div class="p-4 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 font-bold leading-relaxed">
+                            ⚠️ This adds or subtracts XP from the student's earned score. Use positive to boost rank or negative to reduce it. This does <em>not</em> delete any exam results.
+                        </div>
+                        <div>
+                            <label class="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2">XP Adjustment</label>
+                            <div class="flex items-center gap-3">
+                                <button type="button" onclick="window.stepXpOverride(-10)" class="w-10 h-10 bg-rose-50 border border-rose-200 text-rose-600 font-black rounded-xl hover:bg-rose-100 transition-colors text-lg">−</button>
+                                <input type="number" id="xp-override-value" class="flex-1 px-4 py-3 rounded-xl bg-slate-50 border-2 border-slate-200 font-black text-center text-xl outline-none focus:border-indigo-500" value="0" placeholder="e.g. 50 or -20">
+                                <button type="button" onclick="window.stepXpOverride(10)" class="w-10 h-10 bg-emerald-50 border border-emerald-200 text-emerald-600 font-black rounded-xl hover:bg-emerald-100 transition-colors text-lg">+</button>
+                            </div>
+                            <p class="text-[10px] text-slate-400 font-medium mt-2 text-center">Positive = boost rank · Negative = reduce rank · 0 = remove adjustment</p>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2">Reason <span class="normal-case font-medium text-rose-500">* required</span></label>
+                            <textarea id="xp-override-reason" rows="3" placeholder="e.g. Bonus for participation in extra session, Penalty for misconduct…" class="w-full px-4 py-3 rounded-xl bg-slate-50 border-2 border-slate-200 font-medium text-sm outline-none focus:border-indigo-500 resize-none"></textarea>
+                        </div>
+                        <div class="flex gap-3 pt-2">
+                            <button onclick="window.closeXpOverrideModal()" class="flex-1 py-3 bg-slate-100 text-slate-700 font-bold rounded-xl hover:bg-slate-200 transition-colors">Cancel</button>
+                            <button onclick="window.saveXpOverride()" class="flex-1 py-3 bg-indigo-600 text-white font-black rounded-xl hover:bg-indigo-700 transition-colors shadow-md">Save Override</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Certificate File Viewer Modal -->
+            <div id="cert-view-modal" class="hidden-view fixed inset-0 z-[60] bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4">
+                <div class="bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
+                    <div class="p-6 border-b border-slate-200 flex justify-between items-center shrink-0">
+                        <h3 class="text-lg font-black text-slate-900" id="cert-view-title">Certificate</h3>
+                        <button onclick="document.getElementById('cert-view-modal').classList.add('hidden-view')" class="w-8 h-8 flex items-center justify-center bg-slate-200 hover:bg-rose-100 hover:text-rose-600 rounded-full font-bold">✕</button>
+                    </div>
+                    <div class="p-6 overflow-y-auto flex-1 bg-slate-50 flex items-center justify-center" id="cert-view-body"></div>
+                    <div class="p-4 border-t border-slate-200">
+                        <a id="cert-view-download" href="#" download="certificate" class="block w-full text-center py-3 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition-colors">⬇ Download File</a>
+                    </div>
+                </div>
+            </div>
+
         </main>
     </div>
 
@@ -542,7 +865,7 @@
         const getPublicCol = (colName) => collection(db, 'artifacts', appId, 'public', 'data', colName);
         const getPublicDoc = (colName, docId) => doc(db, 'artifacts', appId, 'public', 'data', colName, docId);
 
-        let globalData = { users: [], results: [], quizzes: [], config: {}, seasons: [] };
+        let globalData = { users: [], results: [], quizzes: [], config: {}, seasons: [], certificates: [], studyContent: [] };
         let activeQuizEditor = null;
         let tempLogoBase64 = "";
         let user = null;
@@ -784,13 +1107,33 @@
         // ========================
         // TAB SWITCHING
         // ========================
+        // ========================
+        // MOBILE SIDEBAR CONTROLS
+        // ========================
+        window.openSidebar = () => {
+            document.getElementById('admin-sidebar').classList.add('open');
+            document.getElementById('sidebar-overlay').classList.add('open');
+        };
+        window.closeSidebar = () => {
+            document.getElementById('admin-sidebar').classList.remove('open');
+            document.getElementById('sidebar-overlay').classList.remove('open');
+        };
+
         window.switchTab = (tab) => {
-            ['dashboard', 'students', 'quizzes', 'results', 'seasons', 'audit', 'settings'].forEach(t => {
+            ['dashboard', 'students', 'certificates', 'quizzes', 'results', 'seasons', 'study', 'audit', 'settings'].forEach(t => {
                 document.getElementById(`view-${t}`)?.classList.add('hidden-view');
                 document.getElementById(`nav-${t}`)?.classList.remove('active');
             });
             document.getElementById(`view-${tab}`)?.classList.remove('hidden-view');
             document.getElementById(`nav-${tab}`)?.classList.add('active');
+
+            // Update mobile header title
+            const titleMap = { dashboard:'Dashboard', students:'Students', certificates:'Certificates', quizzes:'Test Builder', results:'Analytics', seasons:'Seasons', study:'Study Content', audit:'Audit Log', settings:'Settings' };
+            const mTitle = document.getElementById('mobile-section-title');
+            if (mTitle) mTitle.innerText = titleMap[tab] || 'Admin';
+
+            // Auto-close sidebar on mobile after selection
+            window.closeSidebar();
 
             if (tab === 'settings') {
                 document.getElementById('set-webname').value = globalData.config.webName || '';
@@ -805,6 +1148,8 @@
             }
             if (tab === 'audit') renderAuditLog();
             if (tab === 'results') renderAnalytics();
+            if (tab === 'certificates') { renderCertificates(); if (!document.getElementById('cert-id-field').value) window.regenerateCertId(); }
+            if (tab === 'study') { window.initStudyAdmin(); }
         };
 
         // ========================
@@ -838,6 +1183,22 @@
                 globalData.seasons = snap.docs.map(d => ({ id: d.id, ...d.data() }));
                 renderSeasons();
             }, err => console.error("Seasons sync error:", err));
+
+            onSnapshot(getPublicCol('exam_certificates'), snap => {
+                globalData.certificates = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                document.getElementById('nav-cert-count').innerText = globalData.certificates.length;
+                document.getElementById('stat-cert-issued').innerText = globalData.certificates.length;
+                renderCertificates();
+            }, err => console.error("Certificates sync error:", err));
+
+            onSnapshot(getPublicCol('study_content'), snap => {
+                globalData.studyContent = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                const countEl = document.getElementById('nav-study-count');
+                if (countEl) countEl.innerText = globalData.studyContent.length;
+                if (!document.getElementById('view-study').classList.contains('hidden-view')) {
+                    renderStudyAdmin();
+                }
+            }, err => console.error("Study content sync error:", err));
         };
 
         // ========================
@@ -849,22 +1210,35 @@
             const totalScore = globalData.results.reduce((s, r) => s + (r.score || 0), 0);
             document.getElementById('stat-avg').innerText = globalData.results.length ? Math.round(totalScore / globalData.results.length) : 0;
 
-            // Leaderboard
+            // Leaderboard — top 10 with admin XP override support
             const xpMap = {};
             globalData.results.forEach(r => { xpMap[r.studentId] = (xpMap[r.studentId] || 0) + (r.score || 0); });
-            const sorted = Object.entries(xpMap).map(([id, xp]) => ({
-                name: globalData.users.find(u => u.id === id)?.name || 'Unknown', xp
-            })).sort((a, b) => b.xp - a.xp).slice(0, 5);
+            // Apply any admin XP overrides stored on user profiles
+            globalData.users.forEach(u => {
+                if (u.xpOverride && u.xpOverride !== 0) {
+                    if (xpMap[u.id] !== undefined) xpMap[u.id] += u.xpOverride;
+                    // If student has no results yet but has a positive override, show them too
+                    else if (u.xpOverride > 0) xpMap[u.id] = u.xpOverride;
+                }
+            });
+            const sorted = Object.entries(xpMap).map(([id, xp]) => {
+                const user = globalData.users.find(u => u.id === id);
+                return { id, name: user?.name || 'Unknown', xp: Math.max(0, xp), override: user?.xpOverride || 0, reason: user?.xpOverrideReason || '', overrideBy: user?.xpOverrideBy || '', overrideAt: user?.xpOverrideAt || null };
+            }).sort((a, b) => b.xp - a.xp);
 
             const lbEl = document.getElementById('dash-leaderboard');
-            const medals = ['🥇', '🥈', '🥉', '4️⃣', '5️⃣'];
+            const rankLabel = (i) => i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `<span class="text-xs font-black text-slate-400 w-5 text-center inline-block">${i + 1}</span>`;
             lbEl.innerHTML = sorted.length ? sorted.map((u, i) => `
-                <div class="flex items-center justify-between py-2 border-b border-slate-50 last:border-0">
-                    <div class="flex items-center gap-2">
-                        <span class="text-lg">${medals[i]}</span>
-                        <span class="font-bold text-slate-800 text-sm">${u.name}</span>
+                <div class="flex items-center justify-between py-2 border-b border-slate-50 last:border-0 group">
+                    <div class="flex items-center gap-2 flex-1 min-w-0">
+                        <span class="text-lg flex-shrink-0">${rankLabel(i)}</span>
+                        <span class="font-bold text-slate-800 text-sm truncate">${u.name}</span>
+                        ${u.override !== 0 ? `<span class="text-[10px] font-black px-1.5 py-0.5 rounded cursor-help ${u.override > 0 ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-600'} flex-shrink-0" title="${u.reason || 'Admin adjusted'}${u.overrideBy ? ' · by ' + u.overrideBy : ''}">${u.override > 0 ? '+' : ''}${u.override} adj</span>` : ''}
                     </div>
-                    <span class="font-black text-indigo-600 text-sm">${u.xp} XP</span>
+                    <div class="flex items-center gap-2">
+                        <span class="font-black text-indigo-600 text-sm">${u.xp} XP</span>
+                        <button onclick="window.openXpOverrideModal('${u.id}', '${u.name.replace(/'/g,"\\'")}', ${u.override}, '${(u.reason||"").replace(/'/g,"\\'").replace(/\n/g," ")}')" class="opacity-0 group-hover:opacity-100 transition-opacity px-2 py-1 bg-indigo-50 text-indigo-600 font-bold rounded-lg text-[10px] hover:bg-indigo-100 flex-shrink-0" title="Adjust XP">✏️</button>
+                    </div>
                 </div>`).join('') : `<div class="text-slate-400 text-sm font-bold text-center py-4">No data yet.</div>`;
 
             // Recent submissions
@@ -979,7 +1353,11 @@
                     </td>
                     <td class="px-6 py-4 text-sm">
                         <div class="font-bold text-slate-600">${userResults.length} Tests</div>
-                        <div class="font-black text-indigo-600">${xp} XP</div>
+                        <div class="flex items-center gap-1.5 flex-wrap mt-0.5">
+                            <span class="font-black text-indigo-600">${xp + (u.xpOverride || 0)} XP</span>
+                            ${u.xpOverride && u.xpOverride !== 0 ? `<span class="text-[10px] font-black px-1.5 py-0.5 rounded cursor-help ${u.xpOverride > 0 ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-600'}" title="${u.xpOverrideReason || 'Admin adjusted'}${u.xpOverrideBy ? ' · by ' + u.xpOverrideBy : ''}">${u.xpOverride > 0 ? '+' : ''}${u.xpOverride} adj</span>` : ''}
+                            <button onclick="window.openXpOverrideModal('${u.id}', '${(u.name||'').replace(/'/g,"\\'")}', ${u.xpOverride || 0}, '${(u.xpOverrideReason||'').replace(/'/g,"\\'").replace(/\\n/g,' ')}')" class="text-[10px] font-bold text-slate-400 hover:text-indigo-600 transition-colors" title="Adjust XP for leaderboard">✏️</button>
+                        </div>
                     </td>
                     <td class="px-6 py-4 text-sm text-slate-400 font-medium">${joined}</td>
                     <td class="px-6 py-4 text-right">
@@ -995,11 +1373,11 @@
         window.filterStudents = () => renderStudents();
 
         window.exportStudentsCSV = () => {
-            const rows = [['Name', 'Enrollment ID', 'Email', 'Phone', 'Tests Taken', 'Total XP']];
+            const rows = [['Name', 'Enrollment ID', 'Email', 'Phone', 'Tests Taken', 'Earned XP', 'XP Adjustment', 'Total XP', 'Adjustment Reason']];
             globalData.users.forEach(u => {
                 const userResults = globalData.results.filter(r => r.studentId === u.id);
                 const xp = userResults.reduce((s, r) => s + (r.score || 0), 0);
-                rows.push([u.name, u.enrollmentId || '', u.email || '', u.phone || '', userResults.length, xp]);
+                const adj = u.xpOverride || 0; rows.push([u.name, u.enrollmentId || '', u.email || '', u.phone || '', userResults.length, xp, adj, xp + adj, u.xpOverrideReason || '']);
             });
             const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
             const a = document.createElement('a');
@@ -1031,7 +1409,23 @@
             const results = globalData.results.filter(r => r.studentId === studentId).sort((a, b) => b.timestamp - a.timestamp);
             const listEl = document.getElementById('sr-modal-list');
 
-            listEl.innerHTML = results.length === 0
+            // XP summary shown at top of results modal
+            const earnedXP = results.reduce((s, r) => s + (r.score || 0), 0);
+            const adjXP = student.xpOverride || 0;
+            const totalXP = earnedXP + adjXP;
+            const xpSummaryBlock = `<div class="mb-4 p-4 bg-indigo-50 border border-indigo-200 rounded-2xl">
+                <div class="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-2">XP Summary</div>
+                <div class="flex flex-wrap gap-4 items-center justify-between">
+                    <div class="flex flex-wrap gap-3 items-center text-sm font-bold">
+                        <span class="text-slate-600">Earned: <span class="text-indigo-600">${earnedXP} XP</span></span>
+                        ${adjXP !== 0 ? \`<span class="${adjXP > 0 ? 'text-emerald-600' : 'text-rose-600'}">Adj: \${adjXP > 0 ? '+' : ''}\${adjXP} XP</span>\` : ''}
+                        <span class="text-slate-900">Total: <strong class="text-indigo-700">\${totalXP} XP</strong></span>
+                    </div>
+                    <button onclick="window.openXpOverrideModal('${studentId}', '${student.name.replace(/'/g, "\\'")}', \${adjXP}, '\${(student.xpOverrideReason||'').replace(/'/g,\"\\'\").replace(/\n/g,' ')}')" class="px-3 py-1.5 bg-white border border-indigo-200 text-indigo-600 font-bold rounded-lg text-xs hover:bg-indigo-100 transition-colors">✏️ Adjust</button>
+                </div>
+                ${adjXP !== 0 && student.xpOverrideReason ? \`<div class="mt-3 pt-3 border-t border-indigo-100 text-xs text-slate-600"><span class="font-black">Reason:</span> \${student.xpOverrideReason}\${student.xpOverrideBy ? \` <span class='text-slate-400 font-medium'>· by \${student.xpOverrideBy}\${student.xpOverrideAt ? ' on ' + new Date(student.xpOverrideAt).toLocaleDateString() : ''}</span>\` : ''}</div>\` : ''}
+            </div>`;
+            listEl.innerHTML = (xpSummaryBlock) + (results.length === 0
                 ? `<div class="text-center p-8 text-slate-400 font-bold">No exam attempts yet.</div>`
                 : results.map(r => {
                     const quiz = globalData.quizzes.find(q => q.id === r.testId);
@@ -1051,7 +1445,7 @@
                             <button onclick="window.deleteStudentResult('${r.id}', '${studentId}')" class="w-8 h-8 flex items-center justify-center bg-rose-100 text-rose-600 rounded-lg hover:bg-rose-200 font-bold">🗑️</button>
                         </div>
                     </div>`;
-                }).join('');
+                }).join(''));
             document.getElementById('modal-student-results').classList.remove('hidden-view');
         };
 
@@ -1064,6 +1458,54 @@
                 showToast("Result removed permanently.");
                 setTimeout(() => window.viewStudentResults(studentId), 300);
             } catch(e) { alert("Error deleting record."); }
+        };
+
+        // ========================
+        // XP OVERRIDE (Leaderboard adjust)
+        // ========================
+        let _xpOverrideStudentId = null;
+
+        window.openXpOverrideModal = (studentId, studentName, currentOverride, currentReason) => {
+            _xpOverrideStudentId = studentId;
+            document.getElementById('xp-override-student-name').innerText = studentName;
+            document.getElementById('xp-override-value').value = currentOverride || 0;
+            document.getElementById('xp-override-reason').value = currentReason || '';
+            document.getElementById('modal-xp-override').classList.remove('hidden-view');
+        };
+
+        window.closeXpOverrideModal = () => {
+            _xpOverrideStudentId = null;
+            document.getElementById('modal-xp-override').classList.add('hidden-view');
+        };
+
+        window.stepXpOverride = (delta) => {
+            const inp = document.getElementById('xp-override-value');
+            inp.value = (parseInt(inp.value) || 0) + delta;
+        };
+
+        window.saveXpOverride = async () => {
+            if (!_xpOverrideStudentId) return;
+            const val = parseInt(document.getElementById('xp-override-value').value) || 0;
+            const reason = document.getElementById('xp-override-reason').value.trim();
+            const reasonEl = document.getElementById('xp-override-reason');
+            if (!reason) {
+                reasonEl.classList.add('border-rose-400');
+                reasonEl.focus();
+                return alert("Please enter a reason for this XP adjustment.");
+            }
+            reasonEl.classList.remove('border-rose-400');
+            const student = globalData.users.find(u => u.id === _xpOverrideStudentId);
+            if (!student) return alert("Student not found.");
+            try {
+                const overrideData = val === 0
+                    ? { xpOverride: 0, xpOverrideReason: '', xpOverrideBy: '', xpOverrideAt: null }
+                    : { xpOverride: val, xpOverrideReason: reason, xpOverrideBy: currentAdminEmail, xpOverrideAt: Date.now() };
+                await updateDoc(getPublicDoc('exam_users', _xpOverrideStudentId), overrideData);
+                const label = val > 0 ? `+${val}` : `${val}`;
+                addAuditEntry('success', `XP Adjustment (${label}) for ${student.name} [${student.enrollmentId || _xpOverrideStudentId}] — Reason: "${reason}" — by ${currentAdminEmail}`);
+                showToast(`XP adjustment saved (${label} XP).`);
+                window.closeXpOverrideModal();
+            } catch(e) { console.error(e); alert("Failed to save XP override. Check connection."); }
         };
 
         // ========================
@@ -1114,7 +1556,7 @@
             if (startTs >= endTs) return alert("End date must be after start date.");
             const id = 'season_' + Date.now();
             try {
-                await setDoc(getPublicDoc('exam_seasons', id), { id, name, start: startTs, end: endTs, winner: null });
+                await setDoc(getPublicDoc('exam_seasons', id), { id, name, start: startTs, end: endTs, winner: null, createdAt: Date.now() });
                 addAuditEntry('success', `Season created: "${name}" by ${currentAdminEmail}`);
                 showToast("Season launched!");
                 ['season-name', 'season-start', 'season-end'].forEach(id => document.getElementById(id).value = '');
@@ -1208,7 +1650,12 @@
                     third: rank3[0] ? { id: rank3[0].id, name: rank3[0].name, xp: rank3[0].xp } : null,
                 };
                 winnerObj.id = rank1[0]?.id; winnerObj.name = rank1[0]?.name; winnerObj.xp = rank1[0]?.xp;
-                await updateDoc(getPublicDoc('exam_seasons', seasonId), { winner: winnerObj });
+                const announcedAt = Date.now();
+                await updateDoc(getPublicDoc('exam_seasons', seasonId), {
+                    winner: winnerObj,
+                    updatedAt: announcedAt,
+                    popupShownVersion: announcedAt // also drives the in-app "winners announced" popup on the user side
+                });
                 addAuditEntry('success', `Winners announced for season "${s.name}" by ${currentAdminEmail}`);
                 showToast("Winners Announced Globally! 🏆");
             }
@@ -1331,13 +1778,18 @@
                 const restrictedBadge = isDrawTest
                     ? `<span class="px-2 py-1 bg-amber-100 text-amber-800 text-[10px] font-black rounded uppercase border border-amber-200">🔒 Draw Test (${q.restrictedTo.length} students)</span>` : '';
                 const timeLimitBadge = q.timeLimit ? `<span class="px-2 py-1 bg-blue-100 text-blue-700 text-[10px] font-black rounded">⏱ ${q.timeLimit}min</span>` : '';
+                const qSeason = q.seasonId ? (globalData.seasons || []).find(s => s.id === q.seasonId) : null;
+                const seasonIsActive = qSeason && Date.now() >= qSeason.start && Date.now() <= qSeason.end;
+                const seasonBadge = qSeason
+                    ? `<span class="px-2 py-1 ${seasonIsActive ? 'bg-emerald-100 text-emerald-700 border-emerald-200' : 'bg-slate-100 text-slate-500 border-slate-200'} text-[10px] font-black rounded uppercase border">${seasonIsActive ? '🟢 ' : '📅 '}${qSeason.name}</span>`
+                    : '';
                 return `
                 <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between hover:shadow-md transition-all ${isDrawTest ? 'draw-test-card' : ''}">
                     <div>
                         <h4 class="font-black text-xl mb-2 text-slate-800">${q.title}</h4>
                         <div class="flex flex-wrap gap-2 mb-3">
                             <span class="px-2 py-1 bg-slate-100 text-slate-600 font-bold rounded-lg text-[10px] uppercase">${timeStr}</span>
-                            ${restrictedBadge}${timeLimitBadge}
+                            ${restrictedBadge}${timeLimitBadge}${seasonBadge}
                         </div>
                         <p class="text-sm text-slate-500 mb-4 line-clamp-2">${q.desc || 'No description.'}</p>
                         <span class="text-xs font-bold bg-slate-100 px-3 py-1.5 rounded-lg text-slate-600">${(q.questions || []).length} Questions</span>
@@ -1363,7 +1815,7 @@
         };
 
         window.createNewQuiz = () => {
-            activeQuizEditor = { id: 'quiz_' + Date.now(), title: '', desc: '', questions: [], alwaysAvailable: true, restrictedTo: [], timeLimit: 0, passingScore: 60 };
+            activeQuizEditor = { id: 'quiz_' + Date.now(), title: '', desc: '', questions: [], alwaysAvailable: true, restrictedTo: [], timeLimit: 0, passingScore: 60, createdAt: Date.now() };
             openQuizEditor();
         };
 
@@ -1378,6 +1830,7 @@
             const newQ = JSON.parse(JSON.stringify(q));
             newQ.id = 'quiz_' + Date.now();
             newQ.title = 'Copy of ' + newQ.title;
+            newQ.createdAt = Date.now();
             try {
                 await setDoc(getPublicDoc('exam_quizzes', newQ.id), newQ);
                 addAuditEntry('info', `Test duplicated: "${q.title}" by ${currentAdminEmail}`);
@@ -1481,6 +1934,19 @@
             document.getElementById('edit-quiz-timelimit').value = activeQuizEditor.timeLimit || 0;
             document.getElementById('edit-quiz-passing').value = activeQuizEditor.passingScore || 60;
 
+            // Populate the season dropdown, then select whichever season this test is already linked to
+            const seasonSel = document.getElementById('edit-quiz-season');
+            if (seasonSel) {
+                const now = Date.now();
+                const seasons = (globalData.seasons || []).slice().sort((a, b) => b.start - a.start);
+                seasonSel.innerHTML = `<option value="">— No Season (General Test) —</option>` +
+                    seasons.map(s => {
+                        const isActive = now >= s.start && now <= s.end;
+                        return `<option value="${s.id}">${isActive ? '🟢 ' : ''}${s.name}${isActive ? ' (Active)' : ''}</option>`;
+                    }).join('');
+                seasonSel.value = activeQuizEditor.seasonId || '';
+            }
+
             // ✅ Populate restricted student chips from stored IDs
             selectedRestrictedIds = new Set(activeQuizEditor.restrictedTo || []);
             renderRestrictedChips();
@@ -1514,18 +1980,25 @@
                 if (q.type === 'mcq') {
                     internals = `<div class="space-y-3 mt-4">
                         <div>
-                            <label class="text-[10px] uppercase font-black text-slate-400 mb-1 block">Options (Comma separated)</label>
-                            <input type="text" value="${(q.options || []).join(', ')}" onchange="window.updateQ(${i}, 'options', this.value)" class="w-full p-3 bg-white border-2 border-slate-200 focus:border-indigo-500 rounded-xl text-sm font-bold outline-none">
+                            <label class="text-[10px] uppercase font-black text-slate-400 mb-1 block">Options (separated by <code class="bg-slate-200 px-1 rounded">|</code>)</label>
+                            <input type="text" value="${(q.options || []).join(' | ')}" onchange="window.updateQ(${i}, 'options', this.value)" class="w-full p-3 bg-white border-2 border-slate-200 focus:border-indigo-500 rounded-xl text-sm font-bold outline-none" placeholder="e.g. Paris | London | Berlin | Rome">
                         </div>
                         <div>
-                            <label class="text-[10px] uppercase font-black text-slate-400 mb-1 block">Correct Answer (match one option exactly)</label>
+                            <label class="text-[10px] uppercase font-black text-slate-400 mb-1 block">Correct Answer <span class="normal-case font-medium text-slate-400">(case & extra spaces are ignored)</span></label>
                             <input type="text" value="${q.correct || ''}" onchange="window.updateQ(${i}, 'correct', this.value)" class="w-full p-3 bg-emerald-50 border-2 border-emerald-100 focus:border-emerald-400 rounded-xl text-sm font-bold text-emerald-900 outline-none">
                         </div>
                     </div>`;
-                } else if (q.type === 'fill' || q.type === 'short') {
-                    internals = `<div class="mt-4">
-                        <label class="text-[10px] uppercase font-black text-slate-400 mb-1 block">Correct Answer</label>
-                        <input type="text" value="${q.correct || ''}" onchange="window.updateQ(${i}, 'correct', this.value)" class="w-full p-3 bg-emerald-50 border-2 border-emerald-100 focus:border-emerald-400 rounded-xl text-sm font-bold text-emerald-900 outline-none">
+                } else if (q.type === 'fill') {
+                    internals = `<div class="space-y-3 mt-4">
+                        <div>
+                            <label class="text-[10px] uppercase font-black text-slate-400 mb-1 block">Answer Options (separated by <code class="bg-slate-200 px-1 rounded">|</code> — students drag-drop from these)</label>
+                            <input type="text" value="${(q.options || []).join(' | ')}" onchange="window.updateQ(${i}, 'options', this.value)" class="w-full p-3 bg-white border-2 border-slate-200 focus:border-indigo-500 rounded-xl text-sm font-bold outline-none" placeholder="e.g. Paris | London | Berlin | Rome">
+                            <p class="text-[10px] text-slate-400 mt-1 font-medium">Include the correct answer plus distractors. Students will drag one into the blank.</p>
+                        </div>
+                        <div>
+                            <label class="text-[10px] uppercase font-black text-slate-400 mb-1 block">Correct Answer <span class="normal-case font-medium text-slate-400">(case & extra spaces are ignored)</span></label>
+                            <input type="text" value="${q.correct || ''}" onchange="window.updateQ(${i}, 'correct', this.value)" class="w-full p-3 bg-emerald-50 border-2 border-emerald-100 focus:border-emerald-400 rounded-xl text-sm font-bold text-emerald-900 outline-none" placeholder="e.g. Paris">
+                        </div>
                     </div>`;
                 } else if (q.type === 'truefalse') {
                     internals = `<div class="mt-4">
@@ -1577,7 +2050,7 @@
             if (!type) return;
             const newQ = { type, q: '', xp: 1 };
             if (type === 'mcq') { newQ.options = []; newQ.correct = ''; }
-            if (type === 'fill' || type === 'short') { newQ.correct = ''; }
+            if (type === 'fill') { newQ.options = []; newQ.correct = ''; }
             if (type === 'truefalse') { newQ.correct = 'True'; }
             if (type === 'match') { newQ.pairs = {}; }
             activeQuizEditor.questions.push(newQ);
@@ -1594,7 +2067,10 @@
 
         window.updateQ = (index, field, value) => {
             if (field === 'options') {
-                activeQuizEditor.questions[index].options = value.split(',').map(s => s.trim()).filter(s => s);
+                activeQuizEditor.questions[index].options = value.split('|').map(s => s.trim()).filter(s => s);
+            } else if (field === 'correct') {
+                // Store normalized: trimmed. Case-insensitive comparison happens at grading time.
+                activeQuizEditor.questions[index].correct = value.trim();
             } else if (field === 'pairs') {
                 const dict = {};
                 value.split('|').forEach(p => { const [k, v] = p.split('='); if (k && v) dict[k.trim()] = v.trim(); });
@@ -1616,9 +2092,9 @@
                 ${qs.map((q, i) => `
                     <div class="mb-5 p-4 bg-slate-50 rounded-xl border border-slate-200">
                         <div class="font-black text-slate-800 mb-2">Q${i + 1}. ${q.q || '<em class="text-slate-400">No prompt</em>'}</div>
-                        ${q.type === 'mcq' && q.options ? q.options.map(o => `<div class="text-sm px-3 py-1 rounded-lg mb-1 ${o === q.correct ? 'bg-emerald-100 text-emerald-800 font-black' : 'bg-white border border-slate-200 text-slate-600'}">${o}</div>`).join('') : ''}
+                        ${q.type === 'mcq' && q.options ? q.options.map(o => `<div class="text-sm px-3 py-1 rounded-lg mb-1 ${o.trim().toLowerCase() === (q.correct||'').trim().toLowerCase() ? 'bg-emerald-100 text-emerald-800 font-black' : 'bg-white border border-slate-200 text-slate-600'}">${o}</div>`).join('') : ''}
+                        ${q.type === 'fill' ? `<div class="mt-2"><div class="text-[10px] font-black text-slate-400 uppercase mb-1">Options: ${(q.options||[]).join(' | ') || '—'}</div><div class="text-xs text-emerald-700 font-bold">✓ Correct: ${q.correct || '—'}</div></div>` : ''}
                         ${q.type === 'truefalse' ? `<div class="flex gap-3 mt-1"><span class="px-3 py-1 rounded-lg text-sm font-bold ${q.correct === 'True' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'}">True</span><span class="px-3 py-1 rounded-lg text-sm font-bold ${q.correct === 'False' ? 'bg-rose-100 text-rose-700' : 'bg-slate-100 text-slate-500'}">False</span></div>` : ''}
-                        ${['fill','short'].includes(q.type) ? `<div class="text-xs text-emerald-700 font-bold mt-1">Answer: ${q.correct || '—'}</div>` : ''}
                         <div class="text-[10px] text-slate-400 font-bold mt-2">XP: ${q.xp || 1}</div>
                     </div>`).join('')}`;
             document.getElementById('quiz-preview-modal').classList.remove('hidden-view');
@@ -1630,6 +2106,7 @@
             activeQuizEditor.alwaysAvailable = document.getElementById('edit-quiz-always').checked;
             activeQuizEditor.timeLimit = parseInt(document.getElementById('edit-quiz-timelimit').value) || 0;
             activeQuizEditor.passingScore = parseInt(document.getElementById('edit-quiz-passing').value) || 60;
+            activeQuizEditor.seasonId = document.getElementById('edit-quiz-season')?.value || '';
 
             const sTime = document.getElementById('edit-quiz-start').value;
             const eTime = document.getElementById('edit-quiz-end').value;
@@ -1650,6 +2127,564 @@
                 console.error(e);
                 alert("Failed to save. Check your network.");
             }
+        };
+
+        // ========================
+        // CERTIFICATES
+        // ========================
+        let selectedCertStudentId = null;
+        let certFileData = '';
+        let certFileType = '';
+        let certFileName = '';
+
+        const generateCertificateId = () => {
+            const year = new Date().getFullYear();
+            const prefix = `CERT-${year}-`;
+            const usedIds = new Set((globalData.certificates || []).map(c => (c.certificateId || c.id || '').toUpperCase()));
+            const existingNums = [...usedIds]
+                .filter(id => id.startsWith(prefix))
+                .map(id => parseInt(id.slice(prefix.length), 10))
+                .filter(n => !isNaN(n));
+            let seq = existingNums.length ? Math.max(...existingNums) + 1 : 1;
+            let candidate = `${prefix}${String(seq).padStart(4, '0')}`;
+            while (usedIds.has(candidate)) {
+                seq++;
+                candidate = `${prefix}${String(seq).padStart(4, '0')}`;
+            }
+            return candidate;
+        };
+
+        window.regenerateCertId = () => {
+            const field = document.getElementById('cert-id-field');
+            if (field) field.value = generateCertificateId();
+        };
+
+        // --- Winner Place preview ---
+        document.addEventListener('change', (e) => {
+            if (e.target.id === 'cert-winner-place' || e.target.id === 'cert-winner-season') {
+                const place = document.getElementById('cert-winner-place')?.value;
+                const season = (document.getElementById('cert-winner-season')?.value || '').trim();
+                const preview = document.getElementById('cert-winner-preview');
+                const medal = document.getElementById('cert-winner-preview-medal');
+                const label = document.getElementById('cert-winner-preview-label');
+                const seasonEl = document.getElementById('cert-winner-preview-season');
+                if (place) {
+                    preview.classList.remove('hidden');
+                    const MAP = { first: { medal: '🥇', label: '1st Place Winner', border: 'border-amber-200', bg: 'bg-amber-50' },
+                                  second: { medal: '🥈', label: '2nd Place Winner', border: 'border-slate-300', bg: 'bg-slate-100' },
+                                  third: { medal: '🥉', label: '3rd Place Winner', border: 'border-orange-200', bg: 'bg-orange-50' } };
+                    const m = MAP[place];
+                    medal.innerText = m.medal;
+                    label.innerText = m.label;
+                    seasonEl.innerText = season ? `${season}` : 'No season specified';
+                    preview.className = `mt-3 p-3 rounded-xl border-2 ${m.border} ${m.bg} flex items-center gap-3`;
+                } else {
+                    preview.classList.add('hidden');
+                }
+            }
+        });
+
+        // --- Recipient student picker (single select) ---
+        window.filterCertStudentPicker = () => {
+            const query = document.getElementById('cert-student-search')?.value?.toLowerCase() || '';
+            const dropdown = document.getElementById('cert-student-dropdown');
+            if (!dropdown) return;
+            if (!query) { dropdown.classList.add('hidden'); return; }
+
+            const matches = globalData.users.filter(u =>
+                u.name?.toLowerCase().includes(query) || u.enrollmentId?.toLowerCase().includes(query)
+            ).slice(0, 10);
+
+            if (matches.length === 0) {
+                dropdown.innerHTML = `<div class="p-3 text-xs text-slate-400 font-bold">No matching students found.</div>`;
+                dropdown.classList.remove('hidden');
+                return;
+            }
+
+            dropdown.innerHTML = matches.map(u => `
+                <div class="flex items-center gap-3 px-4 py-3 hover:bg-indigo-50 cursor-pointer border-b border-slate-50 last:border-0"
+                     onclick="window.selectCertStudent('${u.id}')">
+                    <img src="${u.avatar || 'https://api.dicebear.com/9.x/avataaars/svg?seed=' + u.id}" class="w-7 h-7 rounded-full border border-slate-200 bg-white">
+                    <div>
+                        <div class="font-bold text-slate-800 text-sm">${u.name}</div>
+                        <div class="text-[10px] text-slate-400">${u.enrollmentId || 'No enrollment ID'} · ${u.id.slice(0, 12)}…</div>
+                    </div>
+                </div>`).join('');
+            dropdown.classList.remove('hidden');
+        };
+
+        window.selectCertStudent = (uid) => {
+            const u = globalData.users.find(x => x.id === uid);
+            if (!u) return;
+            selectedCertStudentId = uid;
+            document.getElementById('cert-student-avatar').src = u.avatar || 'https://api.dicebear.com/9.x/avataaars/svg?seed=' + u.id;
+            document.getElementById('cert-student-name').innerText = u.name;
+            document.getElementById('cert-student-eid').innerText = u.enrollmentId || (u.id.slice(0, 10) + '…');
+            document.getElementById('cert-selected-student').classList.remove('hidden');
+            document.getElementById('cert-student-search').value = '';
+            document.getElementById('cert-student-dropdown').classList.add('hidden');
+        };
+
+        window.clearCertStudent = () => {
+            selectedCertStudentId = null;
+            document.getElementById('cert-selected-student')?.classList.add('hidden');
+        };
+
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('#cert-student-search') && !e.target.closest('#cert-student-dropdown')) {
+                document.getElementById('cert-student-dropdown')?.classList.add('hidden');
+            }
+        });
+
+        // --- File upload (image gets compressed; PDF stored as-is with a size guard) ---
+        window.handleCertFileUpload = async (event) => {
+            const file = event.target.files[0];
+            if (!file) return;
+            const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+            try {
+                if (isPdf) {
+                    if (file.size > 700 * 1024) {
+                        alert("This PDF is too large (max ~700KB so it fits in the database). Please compress it or upload an image of the certificate instead.");
+                        event.target.value = '';
+                        return;
+                    }
+                    certFileData = await new Promise((resolve, reject) => {
+                        const reader = new FileReader();
+                        reader.onload = e => resolve(e.target.result);
+                        reader.onerror = reject;
+                        reader.readAsDataURL(file);
+                    });
+                    certFileType = 'pdf';
+                } else {
+                    certFileData = await resizeImageToBase64(file, 1000);
+                    certFileType = 'image';
+                }
+                certFileName = file.name;
+                document.getElementById('cert-file-name').innerText = `Selected: ${file.name}`;
+                const imgEl = document.getElementById('cert-file-preview-img');
+                const iconEl = document.getElementById('cert-file-preview-icon');
+                if (certFileType === 'image') {
+                    imgEl.src = certFileData;
+                    imgEl.classList.remove('hidden');
+                    iconEl.classList.add('hidden');
+                } else {
+                    imgEl.classList.add('hidden');
+                    iconEl.classList.remove('hidden');
+                    iconEl.innerText = '📕';
+                }
+            } catch (e) {
+                alert("Failed to process this file. Please try another image or PDF.");
+                event.target.value = '';
+            }
+        };
+
+        const resetCertForm = () => {
+            window.clearCertStudent();
+            document.getElementById('cert-title').value = '';
+            document.getElementById('cert-desc').value = '';
+            document.getElementById('cert-issue-date').value = new Date().toISOString().slice(0, 10);
+            document.getElementById('cert-file-input').value = '';
+            document.getElementById('cert-file-name').innerText = 'No file selected. Images are compressed automatically; keep PDFs under ~700KB.';
+            document.getElementById('cert-file-preview-img').classList.add('hidden');
+            document.getElementById('cert-file-preview-img').src = '';
+            document.getElementById('cert-file-preview-icon').classList.remove('hidden');
+            document.getElementById('cert-file-preview-icon').innerText = '📄';
+            certFileData = ''; certFileType = ''; certFileName = '';
+            // Reset winner fields
+            const wp = document.getElementById('cert-winner-place');
+            const ws = document.getElementById('cert-winner-season');
+            const wprev = document.getElementById('cert-winner-preview');
+            if (wp) wp.value = '';
+            if (ws) ws.value = '';
+            if (wprev) wprev.classList.add('hidden');
+            window.regenerateCertId();
+        };
+
+        window.issueCertificate = async () => {
+            if (!selectedCertStudentId) return alert("Please select a recipient student.");
+            const student = globalData.users.find(u => u.id === selectedCertStudentId);
+            if (!student) return alert("Selected student could not be found. Please re-select.");
+
+            const title = document.getElementById('cert-title').value.trim();
+            if (!title) return alert("Please enter a Certificate Title / Course name.");
+            if (!certFileData) return alert("Please upload the certificate file (image or PDF).");
+
+            let certId = document.getElementById('cert-id-field').value.trim().toUpperCase().replace(/\s+/g, '-');
+            if (!certId) return alert("Certificate ID cannot be empty.");
+
+            const dupLocal = (globalData.certificates || []).find(c => (c.certificateId || c.id || '').toUpperCase() === certId);
+            if (dupLocal) return alert(`Certificate ID "${certId}" is already in use. Please regenerate or choose a different ID to avoid issuing a duplicate certificate.`);
+
+            const issueDateStr = document.getElementById('cert-issue-date').value;
+            const issueTs = issueDateStr ? new Date(issueDateStr).getTime() : Date.now();
+
+            const payload = {
+                certificateId: certId,
+                studentId: student.id,
+                studentName: student.name,
+                enrollmentId: student.enrollmentId || '',
+                title,
+                description: document.getElementById('cert-desc').value.trim(),
+                fileData: certFileData,
+                fileType: certFileType,
+                fileName: certFileName,
+                issueDate: issueTs,
+                status: 'active',
+                issuedBy: currentAdminEmail,
+                createdAt: Date.now(),
+                winnerPlace: document.getElementById('cert-winner-place')?.value || '',
+                winnerSeason: (document.getElementById('cert-winner-season')?.value || '').trim()
+            };
+
+            try {
+                const ref = getPublicDoc('exam_certificates', certId);
+                const existingSnap = await getDoc(ref); // final race-condition check before writing
+                if (existingSnap.exists()) {
+                    return alert(`Certificate ID "${certId}" was just taken by another record. Please regenerate the ID and try again.`);
+                }
+                await setDoc(ref, payload);
+                addAuditEntry('success', `Certificate issued: ${certId} → ${student.name}${student.enrollmentId ? ` [${student.enrollmentId}]` : ''} ("${title}") by ${currentAdminEmail}`);
+                showToast(`Certificate ${certId} issued!`);
+                resetCertForm();
+            } catch (e) {
+                console.error(e);
+                alert("Failed to issue certificate. The file may be too large for the database (try a smaller image/PDF), or check your network.");
+            }
+        };
+
+        const renderCertificates = () => {
+            const listEl = document.getElementById('cert-list');
+            const emptyEl = document.getElementById('cert-empty');
+            if (!listEl) return;
+
+            const search = (document.getElementById('cert-search')?.value || '').toLowerCase();
+            const statusFilter = document.getElementById('cert-status-filter')?.value || 'all';
+
+            let filtered = (globalData.certificates || []).filter(c => {
+                if (statusFilter !== 'all' && (c.status || 'active') !== statusFilter) return false;
+                if (!search) return true;
+                return (c.studentName || '').toLowerCase().includes(search) ||
+                    (c.enrollmentId || '').toLowerCase().includes(search) ||
+                    (c.certificateId || c.id || '').toLowerCase().includes(search) ||
+                    (c.title || '').toLowerCase().includes(search);
+            }).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+
+            if (filtered.length === 0) {
+                listEl.innerHTML = '';
+                emptyEl.classList.remove('hidden');
+                return;
+            }
+            emptyEl.classList.add('hidden');
+
+            listEl.innerHTML = filtered.map(c => {
+                const id = c.certificateId || c.id;
+                const isRevoked = c.status === 'revoked';
+                const statusBadge = isRevoked
+                    ? `<span class="px-2 py-1 bg-rose-100 text-rose-700 text-[10px] font-black rounded uppercase">Revoked</span>`
+                    : `<span class="px-2 py-1 bg-emerald-100 text-emerald-700 text-[10px] font-black rounded uppercase">Active</span>`;
+                const student = globalData.users.find(u => u.id === c.studentId);
+                const avatar = student?.avatar || ('https://api.dicebear.com/9.x/avataaars/svg?seed=' + c.studentId);
+                const dateStr = c.issueDate ? new Date(c.issueDate).toLocaleDateString() : '—';
+                return `
+                <div class="bg-white p-6 rounded-2xl border ${isRevoked ? 'border-rose-200' : 'border-slate-200'} shadow-sm flex flex-col gap-3">
+                    <div class="flex justify-between items-start gap-3">
+                        <div class="flex items-center gap-3 min-w-0">
+                            <img src="${avatar}" class="w-10 h-10 rounded-full border border-slate-200 bg-white object-cover shrink-0">
+                            <div class="min-w-0">
+                                <div class="font-bold text-slate-800 truncate">${c.studentName || 'Unknown'}</div>
+                                <div class="text-[10px] font-mono text-indigo-500 font-black">${c.enrollmentId || '—'}</div>
+                            </div>
+                        </div>
+                        ${statusBadge}
+                    </div>
+                    <div>
+                        <div class="font-black text-slate-800">${c.title}</div>
+                        ${c.description ? `<div class="text-xs text-slate-500 mt-1 line-clamp-2">${c.description}</div>` : ''}
+                        ${c.winnerPlace ? (() => {
+                            const MAP = { first: { medal: '🥇', label: '1st Place', bg: 'bg-amber-50', text: 'text-amber-800', border: 'border-amber-200' }, second: { medal: '🥈', label: '2nd Place', bg: 'bg-slate-100', text: 'text-slate-700', border: 'border-slate-300' }, third: { medal: '🥉', label: '3rd Place', bg: 'bg-orange-50', text: 'text-orange-800', border: 'border-orange-200' } };
+                            const m = MAP[c.winnerPlace];
+                            if (!m) return '';
+                            return `<div class="inline-flex items-center gap-2 mt-2 px-3 py-1.5 ${m.bg} border ${m.border} rounded-xl text-xs font-black ${m.text}"><span>${m.medal}</span> ${m.label}${c.winnerSeason ? ` · ${c.winnerSeason}` : ''}</div>`;
+                        })() : ''}
+                    </div>
+                    <div class="flex items-center justify-between bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
+                        <span class="font-mono font-black text-amber-700 text-sm tracking-wider truncate">${id}</span>
+                        <button onclick="window.copyCertId('${id}')" class="text-amber-600 hover:text-amber-800 text-xs font-bold px-2 shrink-0" title="Copy ID">📋 Copy</button>
+                    </div>
+                    <div class="text-[10px] text-slate-400 font-bold">Issued ${dateStr}${c.issuedBy ? ` · by ${c.issuedBy}` : ''}</div>
+                    <div class="flex gap-2 pt-2 border-t border-slate-100">
+                        <button onclick="window.viewCertFile('${id}')" class="flex-1 py-2 bg-indigo-50 text-indigo-600 font-bold rounded-lg hover:bg-indigo-100 transition-colors text-xs">View File</button>
+                        <button onclick="window.toggleCertStatus('${id}')" class="flex-1 py-2 ${isRevoked ? 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100' : 'bg-amber-50 text-amber-700 hover:bg-amber-100'} font-bold rounded-lg transition-colors text-xs">${isRevoked ? 'Reinstate' : 'Revoke'}</button>
+                        <button onclick="window.deleteCertificate('${id}')" class="px-3 py-2 bg-rose-50 text-rose-600 font-bold rounded-lg hover:bg-rose-100 transition-colors text-xs">🗑️</button>
+                    </div>
+                </div>`;
+            }).join('');
+        };
+
+        window.filterCertificates = () => renderCertificates();
+
+        window.copyCertId = (id) => {
+            if (navigator.clipboard?.writeText) {
+                navigator.clipboard.writeText(id).then(() => showToast("Certificate ID copied!")).catch(() => showToast("Could not copy — please copy manually.", true));
+            } else {
+                showToast("Could not copy — please copy manually.", true);
+            }
+        };
+
+        window.viewCertFile = (certId) => {
+            const c = (globalData.certificates || []).find(x => (x.certificateId || x.id) === certId);
+            if (!c) return;
+            document.getElementById('cert-view-title').innerText = `${c.title} — ${certId}`;
+            const body = document.getElementById('cert-view-body');
+            if (c.fileType === 'pdf') {
+                body.innerHTML = `<iframe src="${c.fileData}" class="w-full h-[60vh] rounded-xl border border-slate-200 bg-white"></iframe>`;
+            } else {
+                body.innerHTML = `<img src="${c.fileData}" class="max-h-[60vh] w-full object-contain rounded-xl shadow-md bg-white">`;
+            }
+            const dl = document.getElementById('cert-view-download');
+            dl.href = c.fileData;
+            dl.download = `${certId}${c.fileType === 'pdf' ? '.pdf' : '.jpg'}`;
+            document.getElementById('cert-view-modal').classList.remove('hidden-view');
+        };
+
+        window.toggleCertStatus = async (certId) => {
+            const c = (globalData.certificates || []).find(x => (x.certificateId || x.id) === certId);
+            if (!c) return;
+            const newStatus = c.status === 'revoked' ? 'active' : 'revoked';
+            if (newStatus === 'revoked' && !confirm(`Revoke certificate ${certId}? It will be flagged invalid on verification, but not deleted.`)) return;
+            try {
+                await updateDoc(getPublicDoc('exam_certificates', certId), { status: newStatus });
+                addAuditEntry(newStatus === 'revoked' ? 'danger' : 'success', `Certificate ${certId} marked ${newStatus} by ${currentAdminEmail}`);
+                showToast(`Certificate ${newStatus === 'revoked' ? 'revoked' : 'reinstated'}.`);
+            } catch (e) { alert("Failed to update certificate status."); }
+        };
+
+        window.deleteCertificate = async (certId) => {
+            const c = (globalData.certificates || []).find(x => (x.certificateId || x.id) === certId);
+            if (!confirm(`Permanently delete certificate ${certId}${c ? ` for ${c.studentName}` : ''}? This cannot be undone.`)) return;
+            try {
+                await deleteDoc(getPublicDoc('exam_certificates', certId));
+                addAuditEntry('danger', `Certificate deleted: ${certId} by ${currentAdminEmail}`);
+                showToast("Certificate deleted.");
+            } catch (e) { alert("Failed to delete certificate."); }
+        };
+
+        // ========================
+        // STUDY CONTENT
+        // ========================
+        let scFilter = 'all';
+        let scInstaUrlCount = 0;
+
+        window.initStudyAdmin = () => {
+            // Init with one insta URL field if empty
+            const list = document.getElementById('sc-insta-urls-list');
+            if (list && list.children.length === 0) window.addInstaUrlField();
+            // Populate season dropdown
+            const sel = document.getElementById('sc-season-id');
+            if (sel) {
+                const now = Date.now();
+                const seasons = (globalData.seasons || []).sort((a, b) => b.start - a.start);
+                sel.innerHTML = `<option value="">— No Season (General) —</option>` +
+                    seasons.map(s => {
+                        const isActive = now >= s.start && now <= s.end;
+                        return `<option value="${s.id}" ${isActive ? 'selected' : ''}>${isActive ? '🟢 ' : ''}${s.name}${isActive ? ' (Active)' : ''}</option>`;
+                    }).join('');
+            }
+            renderStudyAdmin();
+        };
+
+        window.addInstaUrlField = () => {
+            const list = document.getElementById('sc-insta-urls-list');
+            if (!list) return;
+            scInstaUrlCount++;
+            const idx = scInstaUrlCount;
+            const row = document.createElement('div');
+            row.className = 'flex gap-2 items-center';
+            row.id = `sc-insta-row-${idx}`;
+            row.innerHTML = `
+                <input type="text" id="sc-insta-url-${idx}" placeholder="https://www.instagram.com/p/…" class="flex-1 px-4 py-3 rounded-xl bg-slate-50 border-2 border-slate-100 focus:border-pink-400 outline-none font-bold text-sm font-mono">
+                <button type="button" onclick="document.getElementById('sc-insta-row-${idx}').remove()" class="w-9 h-9 flex items-center justify-center bg-rose-100 text-rose-600 rounded-lg hover:bg-rose-200 font-bold text-lg flex-shrink-0">✕</button>
+            `;
+            list.appendChild(row);
+        };
+
+        window.updateScTypeUI = () => {
+            const type = document.querySelector('input[name="sc-type"]:checked')?.value;
+            document.getElementById('sc-insta-fields').classList.toggle('hidden', type !== 'instagram');
+            document.getElementById('sc-yt-fields').classList.toggle('hidden', type !== 'youtube');
+        };
+
+        // Live YouTube URL → embed preview
+        document.addEventListener('input', (e) => {
+            if (e.target.id === 'sc-yt-url') {
+                const vid = extractYouTubeId(e.target.value);
+                const preview = document.getElementById('sc-yt-preview');
+                const frame = document.getElementById('sc-yt-preview-frame');
+                if (vid) {
+                    frame.src = `https://www.youtube.com/embed/${vid}`;
+                    preview.classList.remove('hidden');
+                } else {
+                    preview.classList.add('hidden');
+                    frame.src = '';
+                }
+            }
+        });
+
+        const extractYouTubeId = (url) => {
+            if (!url) return null;
+            const patterns = [
+                /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/v\/|youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})/,
+                /[?&]v=([a-zA-Z0-9_-]{11})/
+            ];
+            for (const p of patterns) {
+                const m = url.match(p);
+                if (m) return m[1];
+            }
+            return null;
+        };
+
+        const extractInstaShortcode = (url) => {
+            // Extract shortcode from instagram.com/p/SHORTCODE/ or /reel/SHORTCODE/
+            const m = url.match(/instagram\.com\/(?:p|reel|tv)\/([A-Za-z0-9_-]+)/);
+            return m ? m[1] : null;
+        };
+
+        window.previewStudyContent = () => {
+            const type = document.querySelector('input[name="sc-type"]:checked')?.value;
+            const previewArea = document.getElementById('sc-admin-preview');
+            const previewContent = document.getElementById('sc-admin-preview-content');
+            previewArea.classList.remove('hidden');
+            if (type === 'youtube') {
+                const url = document.getElementById('sc-yt-url')?.value.trim();
+                const vid = extractYouTubeId(url);
+                if (!vid) { previewContent.innerHTML = `<p class="text-rose-500 font-bold text-sm">⚠️ Could not extract YouTube video ID. Check the URL.</p>`; return; }
+                previewContent.innerHTML = `<div class="rounded-2xl overflow-hidden aspect-video bg-black shadow-md"><iframe src="https://www.youtube.com/embed/${vid}" class="w-full h-full" frameborder="0" allowfullscreen></iframe></div>`;
+            } else {
+                const urls = [...document.querySelectorAll('[id^="sc-insta-url-"]')].map(el => el.value.trim()).filter(Boolean);
+                if (!urls.length) { previewContent.innerHTML = `<p class="text-rose-500 font-bold text-sm">⚠️ No Instagram URLs entered.</p>`; return; }
+                previewContent.innerHTML = urls.map(url => {
+                    const sc = extractInstaShortcode(url);
+                    if (!sc) return `<p class="text-amber-600 font-bold text-xs">⚠️ Could not parse: ${url}</p>`;
+                    return `<div class="rounded-2xl overflow-hidden border border-pink-200 shadow-sm mb-3 bg-white" style="max-width:540px;"><iframe src="https://www.instagram.com/p/${sc}/embed/" width="100%" height="480" frameborder="0" scrolling="no" allowtransparency="true" style="border:none;overflow:hidden;"></iframe></div>`;
+                }).join('');
+            }
+        };
+
+        window.saveStudyContent = async () => {
+            const type = document.querySelector('input[name="sc-type"]:checked')?.value;
+            const title = document.getElementById('sc-title').value.trim();
+            const category = document.getElementById('sc-category').value.trim();
+            const seasonId = document.getElementById('sc-season-id')?.value || '';
+            const orderVal = parseInt(document.getElementById('sc-order')?.value) || 0;
+            if (!title) return alert("Please enter a title / description for this material.");
+
+            let payload;
+            if (type === 'youtube') {
+                const url = document.getElementById('sc-yt-url')?.value.trim();
+                const vid = extractYouTubeId(url);
+                if (!vid) return alert("Could not extract YouTube video ID. Please check the URL.");
+                payload = { type: 'youtube', title, category, seasonId, order: orderVal, youtubeId: vid, originalUrl: url, createdAt: Date.now(), issuedBy: currentAdminEmail };
+            } else {
+                const urls = [...document.querySelectorAll('[id^="sc-insta-url-"]')].map(el => el.value.trim()).filter(Boolean);
+                if (!urls.length) return alert("Please add at least one Instagram post URL.");
+                const shortcodes = urls.map(u => ({ url: u, shortcode: extractInstaShortcode(u) })).filter(x => x.shortcode);
+                if (!shortcodes.length) return alert("Could not parse any valid Instagram post URLs. Make sure they contain /p/ or /reel/.");
+                payload = { type: 'instagram', title, category, seasonId, order: orderVal, posts: shortcodes, createdAt: Date.now(), issuedBy: currentAdminEmail };
+            }
+
+            const id = 'sc_' + Date.now();
+            try {
+                await setDoc(getPublicDoc('study_content', id), { id, ...payload });
+                addAuditEntry('success', `Study content added: "${title}" [${type}]${seasonId ? ` for season ${seasonId}` : ''} by ${currentAdminEmail}`);
+                showToast("Study material published! 📚");
+                // Reset form
+                document.getElementById('sc-title').value = '';
+                document.getElementById('sc-category').value = '';
+                document.getElementById('sc-order').value = '';
+                document.getElementById('sc-yt-url').value = '';
+                document.getElementById('sc-yt-preview').classList.add('hidden');
+                document.getElementById('sc-insta-urls-list').innerHTML = '';
+                scInstaUrlCount = 0;
+                window.addInstaUrlField();
+                document.getElementById('sc-admin-preview').classList.add('hidden');
+            } catch(e) { console.error(e); alert("Failed to save. Check connection."); }
+        };
+
+        let scFilterCurrent = 'all';
+        window.filterStudy = (f) => {
+            scFilterCurrent = f;
+            ['all', 'instagram', 'youtube'].forEach(x => {
+                const btn = document.getElementById(`sc-filter-${x}`);
+                if (btn) btn.className = x === f
+                    ? 'px-4 py-2 bg-slate-800 text-white font-bold rounded-xl text-sm'
+                    : 'px-4 py-2 bg-slate-100 text-slate-700 font-bold rounded-xl text-sm hover:bg-slate-200';
+            });
+            renderStudyAdmin();
+        };
+
+        const renderStudyAdmin = () => {
+            const list = document.getElementById('sc-admin-list');
+            const empty = document.getElementById('sc-admin-empty');
+            const totalEl = document.getElementById('sc-total-count');
+            if (!list) return;
+
+            const now = Date.now();
+            const items = (globalData.studyContent || [])
+                .filter(x => scFilterCurrent === 'all' || x.type === scFilterCurrent)
+                .sort((a, b) => {
+                    // Active season first, then by createdAt desc
+                    const sa = globalData.seasons.find(s => s.id === a.seasonId);
+                    const sb = globalData.seasons.find(s => s.id === b.seasonId);
+                    const aActive = sa && now >= sa.start && now <= sa.end ? 1 : 0;
+                    const bActive = sb && now >= sb.start && now <= sb.end ? 1 : 0;
+                    if (bActive !== aActive) return bActive - aActive;
+                    return (b.createdAt || 0) - (a.createdAt || 0);
+                });
+
+            if (totalEl) totalEl.innerText = (globalData.studyContent || []).length;
+
+            if (items.length === 0) {
+                list.innerHTML = '';
+                empty.classList.remove('hidden');
+                return;
+            }
+            empty.classList.add('hidden');
+
+            list.innerHTML = items.map(item => {
+                const dateStr = item.createdAt ? new Date(item.createdAt).toLocaleDateString() : '—';
+                const season = item.seasonId ? globalData.seasons.find(s => s.id === item.seasonId) : null;
+                const isActiveSeason = season && now >= season.start && now <= season.end;
+                const typeBadge = item.type === 'youtube'
+                    ? `<span class="px-2 py-1 bg-red-100 text-red-700 text-[10px] font-black rounded uppercase">▶️ YouTube</span>`
+                    : `<span class="px-2 py-1 bg-pink-100 text-pink-700 text-[10px] font-black rounded uppercase">📸 Instagram</span>`;
+                const catBadge = item.category ? `<span class="px-2 py-1 bg-violet-100 text-violet-700 text-[10px] font-black rounded">${item.category}</span>` : '';
+                const seasonBadge = season
+                    ? `<span class="px-2 py-1 text-[10px] font-black rounded ${isActiveSeason ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'}">${isActiveSeason ? '🟢 ' : '📅 '}${season.name}</span>`
+                    : `<span class="px-2 py-1 bg-slate-100 text-slate-400 text-[10px] font-bold rounded">General</span>`;
+                const detail = item.type === 'youtube'
+                    ? `<img src="https://img.youtube.com/vi/${item.youtubeId}/mqdefault.jpg" class="w-24 h-14 object-cover rounded-lg border border-slate-200 flex-shrink-0" onerror="this.style.display='none'">`
+                    : `<div class="flex gap-1 flex-shrink-0">${(item.posts || []).slice(0,3).map(() => `<div class="w-10 h-10 rounded-lg bg-gradient-to-br from-pink-200 to-purple-200 flex items-center justify-center text-sm border border-pink-200">📸</div>`).join('')}${(item.posts||[]).length > 3 ? `<div class="w-10 h-10 rounded-lg bg-pink-50 flex items-center justify-center text-xs font-black text-pink-400 border border-pink-100">+${(item.posts||[]).length-3}</div>` : ''}</div>`;
+
+                return `<div class="bg-white p-5 rounded-2xl border ${isActiveSeason ? 'border-emerald-200 shadow-emerald-50' : 'border-slate-200'} shadow-sm flex items-start gap-4 hover:shadow-md transition-shadow">
+                    ${detail}
+                    <div class="flex-1 min-w-0">
+                        <div class="flex flex-wrap gap-1.5 mb-1.5">${typeBadge}${seasonBadge}${catBadge}</div>
+                        <div class="font-black text-slate-800 text-base truncate">${item.title}</div>
+                        <div class="text-[10px] text-slate-400 font-bold mt-1">Added ${dateStr}${item.issuedBy ? ` · ${item.issuedBy}` : ''}${item.type === 'instagram' ? ` · ${(item.posts||[]).length} post(s)` : ''}</div>
+                    </div>
+                    <button onclick="window.deleteStudyContent('${item.id}')" class="px-3 py-2 bg-rose-50 text-rose-600 font-bold rounded-xl hover:bg-rose-100 transition-colors text-xs flex-shrink-0">🗑️ Delete</button>
+                </div>`;
+            }).join('');
+        };
+
+        window.deleteStudyContent = async (id) => {
+            const item = (globalData.studyContent || []).find(x => x.id === id);
+            if (!confirm(`Delete "${item?.title || 'this item'}"? Students will no longer see it.`)) return;
+            try {
+                await deleteDoc(getPublicDoc('study_content', id));
+                addAuditEntry('danger', `Study content deleted: "${item?.title}" by ${currentAdminEmail}`);
+                showToast("Study material removed.");
+            } catch(e) { alert("Failed to delete."); }
         };
 
     </script>
