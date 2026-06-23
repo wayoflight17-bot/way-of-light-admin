@@ -1026,7 +1026,7 @@
             onSnapshot(getPublicDoc('admin_settings', 'config'), snap => {
                 if (snap.exists()) {
                     globalData.config = snap.data();
-                    if (!globalData.config.admins) {
+                    if (!globalData.config.admins || globalData.config.admins.length === 0) {
                         globalData.config.admins = [{ email: 'syedibrahim530520@gmail.com', password: 'ibrahim' }];
                         setDoc(getPublicDoc('admin_settings', 'config'), globalData.config, { merge: true });
                     }
@@ -1082,8 +1082,13 @@
                 return;
             }
 
-            const adminsList = globalData.config.admins || [{ email: 'syedibrahim530520@gmail.com', password: 'ibrahim' }];
-            const match = adminsList.find(a => a.email.toLowerCase() === email && a.password === pwd);
+            // Always ensure fallback admin exists
+            const FALLBACK_ADMINS = [{ email: 'syedibrahim530520@gmail.com', password: 'ibrahim' }];
+            const adminsList = (globalData.config.admins && globalData.config.admins.length > 0)
+                ? globalData.config.admins
+                : FALLBACK_ADMINS;
+            const match = adminsList.find(a => a.email.toLowerCase() === email && a.password === pwd)
+                       || FALLBACK_ADMINS.find(a => a.email.toLowerCase() === email && a.password === pwd);
 
             if (match) {
                 loginAttempts = 0;
