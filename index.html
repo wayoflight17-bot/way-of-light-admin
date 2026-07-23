@@ -145,13 +145,8 @@
                 </a>
                 <a href="#" onclick="window.switchTab('certificates')" id="nav-certificates" class="nav-item flex items-center gap-3 px-6 py-3 text-sm font-bold text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
-                    Certificates
+                    Certificates &amp; Awards
                     <span id="nav-cert-count" class="ml-auto bg-amber-100 text-amber-700 text-[10px] font-black px-2 py-0.5 rounded-full live-badge">0</span>
-                </a>
-                <a href="#" onclick="window.switchTab('awardletters')" id="nav-awardletters" class="nav-item flex items-center gap-3 px-6 py-3 text-sm font-bold text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15a3 3 0 100-6 3 3 0 000 6z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.21 13.89L7 23l5-3 5 3-1.21-9.12M6.5 8.5a5.5 5.5 0 1111 0 5.5 5.5 0 01-11 0z"/></svg>
-                    Award Letters
-                    <span id="nav-award-count" class="ml-auto bg-violet-100 text-violet-700 text-[10px] font-black px-2 py-0.5 rounded-full live-badge">0</span>
                 </a>
                 <a href="#" onclick="window.switchTab('quizzes')" id="nav-quizzes" class="nav-item flex items-center gap-3 px-6 py-3 text-sm font-bold text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/></svg>
@@ -279,10 +274,10 @@
 
             <!-- Certificates View -->
             <div id="view-certificates" class="hidden-view space-y-6">
-                <h2 class="text-3xl font-black text-slate-900">Certificate Issuance</h2>
-                <p class="text-slate-500 text-sm -mt-4">Every certificate gets a unique Certificate ID. Students see it on their portal, and it can be looked up to confirm a certificate is genuine and not duplicated.</p>
+                <h2 class="text-3xl font-black text-slate-900">Certificates &amp; Award Letters</h2>
+                <p class="text-slate-500 text-sm -mt-4">Every certificate gets a unique Certificate ID. An award letter is optional — not every certificate comes with one, but when it does, it's tied to this same record. You can add the award letter now or come back and add it later.</p>
 
-                <!-- Issue New Certificate -->
+                <!-- Issue New Certificate (+ optional Award Letter) -->
                 <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
                     <h3 class="font-black text-lg text-slate-800 mb-4">Issue New Certificate</h3>
 
@@ -373,6 +368,47 @@
                         </div>
                     </div>
 
+                    <!-- Optional Award Letter, tied to this same certificate record -->
+                    <div class="mb-6 border-t-2 border-dashed border-slate-200 pt-6">
+                        <label class="flex items-center gap-3 cursor-pointer mb-1">
+                            <input type="checkbox" id="cert-include-award" onchange="window.toggleAwardSubsection()" class="w-5 h-5 accent-violet-500 rounded">
+                            <span class="text-sm font-black text-slate-700">🏅 Also include an Award Letter for this record</span>
+                        </label>
+                        <p class="text-[10px] text-slate-400 mb-4 ml-8">Optional. Not every certificate needs one — check this only if you have an award letter to attach now. You can also come back and add it to this record later from the list below.</p>
+
+                        <div id="cert-award-subsection" class="hidden space-y-6 bg-violet-50/50 border border-violet-100 rounded-2xl p-5">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label class="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2">Award ID</label>
+                                    <div class="flex gap-2">
+                                        <input type="text" id="award-id-field" class="flex-1 px-4 py-3 rounded-xl bg-violet-50 border-2 border-violet-200 focus:border-violet-500 outline-none font-mono font-black text-sm tracking-wider">
+                                        <button onclick="window.regenerateAwardId()" type="button" class="px-4 py-3 bg-slate-100 hover:bg-slate-200 rounded-xl font-bold text-sm" title="Regenerate ID" data-tip="Regenerate ID">🔄</button>
+                                    </div>
+                                    <p class="text-[10px] text-slate-400 mt-1.5">Auto-generated &amp; checked for uniqueness.</p>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2">Award Title</label>
+                                    <input type="text" id="award-title" placeholder="e.g. Season Champion Award Letter" class="w-full px-4 py-3 rounded-xl bg-white border-2 border-slate-100 focus:border-violet-500 outline-none font-bold text-sm">
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2">Award Letter File (Image or PDF)</label>
+                                <div class="flex items-center gap-4">
+                                    <div id="award-file-preview-wrap" class="w-24 h-24 rounded-xl bg-white border-2 border-dashed border-slate-200 flex items-center justify-center overflow-hidden shrink-0">
+                                        <img id="award-file-preview-img" src="" class="hidden w-full h-full object-cover">
+                                        <span id="award-file-preview-icon" class="text-2xl text-slate-300">📄</span>
+                                    </div>
+                                    <div>
+                                        <label for="award-file-input" class="cursor-pointer bg-white text-slate-700 text-xs font-bold px-4 py-2 rounded-lg hover:bg-slate-100 transition-colors border border-slate-300 inline-block">Choose File</label>
+                                        <input type="file" id="award-file-input" accept="image/*,.pdf" class="hidden" onchange="window.handleAwardFileUpload(event)">
+                                        <p class="text-[10px] text-slate-400 mt-2 font-medium" id="award-file-name">No file selected. Images are compressed automatically; keep PDFs under ~700KB.</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <p class="text-[10px] text-violet-500 font-bold">Winner placement and season above apply to both the certificate and this award letter — no need to set them twice.</p>
+                        </div>
+                    </div>
+
                     <button onclick="window.issueCertificate()" class="w-full py-4 bg-emerald-500 text-white font-black text-lg rounded-2xl shadow-lg hover:bg-emerald-600 active:scale-[0.98] transition-all">
                         🎓 Issue Certificate
                     </button>
@@ -393,124 +429,6 @@
 
                 <div id="cert-list" class="grid grid-cols-1 md:grid-cols-2 gap-6"></div>
                 <div id="cert-empty" class="hidden p-8 text-center text-slate-400 font-bold bg-white rounded-2xl border border-slate-200">No certificates issued yet.</div>
-            </div>
-
-            <!-- Award Letters View -->
-            <div id="view-awardletters" class="hidden-view space-y-6">
-                <h2 class="text-3xl font-black text-slate-900">Award Letters</h2>
-                <p class="text-slate-500 text-sm -mt-4">Award letters are separate from certificates — a student can have both for the same achievement. Each gets its own unique Award ID.</p>
-
-                <!-- Issue New Award Letter -->
-                <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
-                    <h3 class="font-black text-lg text-slate-800 mb-4">Issue New Award Letter</h3>
-
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                        <div>
-                            <label class="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2">Recipient Student</label>
-                            <div id="award-selected-student" class="hidden mb-2 flex items-center justify-between p-3 bg-violet-50 border border-violet-200 rounded-xl">
-                                <div class="flex items-center gap-3">
-                                    <img id="award-student-avatar" src="" class="w-8 h-8 rounded-full border border-violet-200 bg-white object-cover">
-                                    <div>
-                                        <div class="font-bold text-slate-800 text-sm" id="award-student-name">--</div>
-                                        <div class="text-[10px] font-mono text-violet-500 font-black" id="award-student-eid">--</div>
-                                    </div>
-                                </div>
-                                <button onclick="window.clearAwardStudent()" type="button" class="text-rose-500 hover:text-rose-700 font-bold text-sm px-2">✕</button>
-                            </div>
-                            <div class="relative">
-                                <input type="text" id="award-student-search" oninput="window.filterAwardStudentPicker()" placeholder="🔍 Search student by name or enrollment ID…" class="w-full px-4 py-3 rounded-xl bg-slate-50 border-2 border-slate-100 focus:border-violet-500 outline-none font-bold text-sm">
-                                <div id="award-student-dropdown" class="hidden absolute z-30 w-full bg-white border border-slate-200 rounded-xl shadow-xl mt-1 max-h-52 overflow-y-auto"></div>
-                            </div>
-                        </div>
-
-                        <div>
-                            <label class="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2">Award ID</label>
-                            <div class="flex gap-2">
-                                <input type="text" id="award-id-field" class="flex-1 px-4 py-3 rounded-xl bg-violet-50 border-2 border-violet-200 focus:border-violet-500 outline-none font-mono font-black text-sm tracking-wider">
-                                <button onclick="window.regenerateAwardId()" type="button" class="px-4 py-3 bg-slate-100 hover:bg-slate-200 rounded-xl font-bold text-sm" title="Regenerate ID" data-tip="Regenerate ID">🔄</button>
-                            </div>
-                            <p class="text-[10px] text-slate-400 mt-1.5">Auto-generated &amp; checked for uniqueness. You can customize it before issuing.</p>
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                        <div>
-                            <label class="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2">Award Title</label>
-                            <input type="text" id="award-title" placeholder="e.g. Season Champion Award Letter" class="w-full px-4 py-3 rounded-xl bg-slate-50 border-2 border-slate-100 focus:border-violet-500 outline-none font-bold text-sm">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2">Issue Date</label>
-                            <input type="date" id="award-issue-date" class="w-full px-4 py-3 rounded-xl bg-slate-50 border-2 border-slate-100 focus:border-violet-500 outline-none font-bold text-sm">
-                        </div>
-                    </div>
-
-                    <div class="mb-6">
-                        <label class="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2">Description / Notes (optional)</label>
-                        <textarea id="award-desc" rows="2" placeholder="Internal notes about this award letter…" class="w-full px-4 py-3 rounded-xl bg-slate-50 border-2 border-slate-100 focus:border-violet-500 outline-none font-medium text-sm"></textarea>
-                    </div>
-
-                    <div class="mb-6">
-                        <label class="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2">🏆 Place Winner (optional)</label>
-                        <p class="text-[10px] text-slate-400 mb-3 font-medium">If this award letter is for a competition win, select the placement. This will display a winner badge publicly on the student's profile and on the award letter.</p>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Winner Placement</label>
-                                <select id="award-winner-place" class="w-full px-4 py-3 rounded-xl bg-slate-50 border-2 border-slate-100 focus:border-violet-500 outline-none font-bold text-sm">
-                                    <option value="">— None (Regular Award Letter) —</option>
-                                    <option value="first">🥇 1st Place Winner</option>
-                                    <option value="second">🥈 2nd Place Winner</option>
-                                    <option value="third">🥉 3rd Place Winner</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Season / Competition Name (if applicable)</label>
-                                <input type="text" id="award-winner-season" placeholder="e.g. Winter 2026 Season" class="w-full px-4 py-3 rounded-xl bg-slate-50 border-2 border-slate-100 focus:border-violet-500 outline-none font-bold text-sm">
-                            </div>
-                        </div>
-                        <div id="award-winner-preview" class="hidden mt-3 p-3 rounded-xl border-2 border-violet-200 bg-violet-50 flex items-center gap-3">
-                            <span id="award-winner-preview-medal" class="text-2xl">🏆</span>
-                            <div>
-                                <div id="award-winner-preview-label" class="font-black text-violet-800 text-sm">1st Place Winner</div>
-                                <div id="award-winner-preview-season" class="text-xs text-violet-600 font-bold"></div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="mb-6">
-                        <label class="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2">Award Letter File (Image or PDF)</label>
-                        <div class="flex items-center gap-4">
-                            <div id="award-file-preview-wrap" class="w-24 h-24 rounded-xl bg-slate-50 border-2 border-dashed border-slate-200 flex items-center justify-center overflow-hidden shrink-0">
-                                <img id="award-file-preview-img" src="" class="hidden w-full h-full object-cover">
-                                <span id="award-file-preview-icon" class="text-2xl text-slate-300">📄</span>
-                            </div>
-                            <div>
-                                <label for="award-file-input" class="cursor-pointer bg-slate-100 text-slate-700 text-xs font-bold px-4 py-2 rounded-lg hover:bg-slate-200 transition-colors border border-slate-300 inline-block">Choose File</label>
-                                <input type="file" id="award-file-input" accept="image/*,.pdf" class="hidden" onchange="window.handleAwardFileUpload(event)">
-                                <p class="text-[10px] text-slate-400 mt-2 font-medium" id="award-file-name">No file selected. Images are compressed automatically; keep PDFs under ~700KB.</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <button onclick="window.issueAwardLetter()" class="w-full py-4 bg-violet-500 text-white font-black text-lg rounded-2xl shadow-lg hover:bg-violet-600 active:scale-[0.98] transition-all">
-                        🏅 Issue Award Letter
-                    </button>
-                </div>
-
-                <!-- List -->
-                <div class="flex justify-between items-center flex-wrap gap-4">
-                    <h3 class="text-xl font-black text-slate-800">Issued Award Letters</h3>
-                    <div class="flex gap-3 flex-wrap">
-                        <input type="text" id="award-search" oninput="window.filterAwardLetters()" placeholder="Search by name, enrollment or award ID…" class="px-4 py-2 rounded-xl bg-white border border-slate-200 font-bold text-sm outline-none focus:border-violet-500 w-64">
-                        <select id="award-status-filter" onchange="window.filterAwardLetters()" class="px-4 py-2 rounded-xl bg-white border border-slate-200 font-bold text-sm outline-none focus:border-violet-500">
-                            <option value="all">All Status</option>
-                            <option value="active">Active Only</option>
-                            <option value="revoked">Revoked Only</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div id="award-list" class="grid grid-cols-1 md:grid-cols-2 gap-6"></div>
-                <div id="award-empty" class="hidden p-8 text-center text-slate-400 font-bold bg-white rounded-2xl border border-slate-200">No award letters issued yet.</div>
             </div>
 
             <!-- Results & Analytics View -->
@@ -1109,6 +1027,50 @@
                 </div>
             </div>
 
+            <!-- Add Award Letter Later modal — for a certificate issued without one -->
+            <div id="modal-add-award" class="hidden-view fixed inset-0 z-[60] bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4">
+                <div class="bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
+                    <div class="p-6 border-b border-slate-200 flex justify-between items-center shrink-0">
+                        <h3 class="text-lg font-black text-slate-900">🏅 Add Award Letter</h3>
+                        <button onclick="window.closeAddAwardModal()" class="w-8 h-8 flex items-center justify-center bg-slate-200 hover:bg-rose-100 hover:text-rose-600 rounded-full font-bold">✕</button>
+                    </div>
+                    <div class="p-6 overflow-y-auto flex-1 space-y-5">
+                        <div class="p-3 bg-indigo-50 border border-indigo-200 rounded-xl text-xs font-bold text-indigo-700" id="add-award-modal-cert-label">--</div>
+
+                        <div>
+                            <label class="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2">Award ID</label>
+                            <div class="flex gap-2">
+                                <input type="text" id="add-award-modal-id-field" class="flex-1 px-4 py-3 rounded-xl bg-violet-50 border-2 border-violet-200 focus:border-violet-500 outline-none font-mono font-black text-sm tracking-wider">
+                                <button onclick="window.regenerateAddAwardModalId()" type="button" class="px-4 py-3 bg-slate-100 hover:bg-slate-200 rounded-xl font-bold text-sm">🔄</button>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2">Award Title</label>
+                            <input type="text" id="add-award-modal-title" placeholder="e.g. Season Champion Award Letter" class="w-full px-4 py-3 rounded-xl bg-slate-50 border-2 border-slate-100 focus:border-violet-500 outline-none font-bold text-sm">
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2">Award Letter File (Image or PDF)</label>
+                            <div class="flex items-center gap-4">
+                                <div class="w-24 h-24 rounded-xl bg-slate-50 border-2 border-dashed border-slate-200 flex items-center justify-center overflow-hidden shrink-0">
+                                    <img id="add-award-modal-preview-img" src="" class="hidden w-full h-full object-cover">
+                                    <span id="add-award-modal-preview-icon" class="text-2xl text-slate-300">📄</span>
+                                </div>
+                                <div>
+                                    <label for="add-award-modal-file-input" class="cursor-pointer bg-slate-100 text-slate-700 text-xs font-bold px-4 py-2 rounded-lg hover:bg-slate-200 transition-colors border border-slate-300 inline-block">Choose File</label>
+                                    <input type="file" id="add-award-modal-file-input" accept="image/*,.pdf" class="hidden" onchange="window.handleAddAwardModalFileUpload(event)">
+                                    <p class="text-[10px] text-slate-400 mt-2 font-medium" id="add-award-modal-file-name">No file selected.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="p-4 border-t border-slate-200">
+                        <button onclick="window.confirmAddAwardModal()" class="w-full py-3 bg-violet-600 text-white font-black rounded-xl hover:bg-violet-700 transition-colors">Add Award Letter</button>
+                    </div>
+                </div>
+            </div>
+
         </main>
     </div>
 
@@ -1141,7 +1103,7 @@
         const getPublicCol = (colName) => collection(db, 'artifacts', appId, 'public', 'data', colName);
         const getPublicDoc = (colName, docId) => doc(db, 'artifacts', appId, 'public', 'data', colName, docId);
 
-        let globalData = { users: [], results: [], quizzes: [], config: {}, seasons: [], certificates: [], awardLetters: [], studyContent: [], categoryCovers: [] };
+        let globalData = { users: [], results: [], quizzes: [], config: {}, seasons: [], certificates: [], studyContent: [], categoryCovers: [] };
         let activeQuizEditor = null;
         let tempLogoBase64 = "";
         let user = null;
@@ -1396,7 +1358,7 @@
         };
 
         window.switchTab = (tab) => {
-            ['dashboard', 'students', 'certificates', 'awardletters', 'quizzes', 'results', 'seasons', 'study', 'audit', 'settings'].forEach(t => {
+            ['dashboard', 'students', 'certificates', 'quizzes', 'results', 'seasons', 'study', 'audit', 'settings'].forEach(t => {
                 document.getElementById(`view-${t}`)?.classList.add('hidden-view');
                 document.getElementById(`nav-${t}`)?.classList.remove('active');
             });
@@ -1404,7 +1366,7 @@
             document.getElementById(`nav-${tab}`)?.classList.add('active');
 
             // Update mobile header title
-            const titleMap = { dashboard:'Dashboard', students:'Students', certificates:'Certificates', awardletters:'Award Letters', quizzes:'Test Builder', results:'Analytics', seasons:'Seasons', study:'Study Content', audit:'Audit Log', settings:'Settings' };
+            const titleMap = { dashboard:'Dashboard', students:'Students', certificates:'Certificates & Awards', quizzes:'Test Builder', results:'Analytics', seasons:'Seasons', study:'Study Content', audit:'Audit Log', settings:'Settings' };
             const mTitle = document.getElementById('mobile-section-title');
             if (mTitle) mTitle.innerText = titleMap[tab] || 'Admin';
 
@@ -1425,7 +1387,6 @@
             if (tab === 'audit') renderAuditLog();
             if (tab === 'results') renderAnalytics();
             if (tab === 'certificates') { renderCertificates(); if (!document.getElementById('cert-id-field').value) window.regenerateCertId(); }
-            if (tab === 'awardletters') { renderAwardLetters(); if (!document.getElementById('award-id-field').value) window.regenerateAwardId(); }
             if (tab === 'study') { window.initStudyAdmin(); }
         };
 
@@ -1467,12 +1428,6 @@
                 document.getElementById('stat-cert-issued').innerText = globalData.certificates.length;
                 renderCertificates();
             }, err => console.error("Certificates sync error:", err));
-
-            onSnapshot(getPublicCol('exam_award_letters'), snap => {
-                globalData.awardLetters = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-                document.getElementById('nav-award-count').innerText = globalData.awardLetters.length;
-                renderAwardLetters();
-            }, err => console.error("Award letters sync error:", err));
 
             onSnapshot(getPublicCol('study_content'), snap => {
                 globalData.studyContent = snap.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -2896,6 +2851,21 @@
             const dupLocal = (globalData.certificates || []).find(c => (c.certificateId || c.id || '').toUpperCase() === certId);
             if (dupLocal) return alert(`Certificate ID "${certId}" is already in use. Please regenerate or choose a different ID to avoid issuing a duplicate certificate.`);
 
+            // Award letter is optional — only validated/included if the admin checked the box.
+            const includeAward = document.getElementById('cert-include-award')?.checked;
+            let awardId = '';
+            if (includeAward) {
+                if (!awardFileData) return alert("You checked 'Also include an Award Letter' — please upload the award letter file, or uncheck the box to issue the certificate without one.");
+                const awardTitle = document.getElementById('award-title').value.trim();
+                if (!awardTitle) return alert("Please enter an Award Title, or uncheck 'Also include an Award Letter'.");
+                awardId = document.getElementById('award-id-field').value.trim().toUpperCase().replace(/\s+/g, '-');
+                if (!awardId) return alert("Award ID cannot be empty.");
+                // Award IDs live on certificate records now, so uniqueness is checked against every
+                // certificate's awardId field, not a separate collection.
+                const dupAward = (globalData.certificates || []).find(c => c.awardId && c.awardId.toUpperCase() === awardId);
+                if (dupAward) return alert(`Award ID "${awardId}" is already in use on another record. Please regenerate or choose a different ID.`);
+            }
+
             const issueDateStr = document.getElementById('cert-issue-date').value;
             const issueTs = issueDateStr ? new Date(issueDateStr).getTime() : Date.now();
 
@@ -2914,7 +2884,15 @@
                 issuedBy: currentAdminEmail,
                 createdAt: Date.now(),
                 winnerPlace: document.getElementById('cert-winner-place')?.value || '',
-                winnerSeason: (document.getElementById('cert-winner-season')?.value || '').trim()
+                winnerSeason: (document.getElementById('cert-winner-season')?.value || '').trim(),
+                // Award letter fields — all empty/absent when no award letter is attached. Kept on
+                // this same record (rather than a separate collection) so a certificate and its
+                // award letter are always issued, viewed, revoked, and deleted together as one unit.
+                awardId: includeAward ? awardId : '',
+                awardTitle: includeAward ? document.getElementById('award-title').value.trim() : '',
+                awardFileData: includeAward ? awardFileData : '',
+                awardFileType: includeAward ? awardFileType : '',
+                awardFileName: includeAward ? awardFileName : ''
             };
 
             try {
@@ -2924,8 +2902,11 @@
                     return alert(`Certificate ID "${certId}" was just taken by another record. Please regenerate the ID and try again.`);
                 }
                 await setDoc(ref, payload);
-                addAuditEntry('success', `Certificate issued: ${certId} → ${student.name}${student.enrollmentId ? ` [${student.enrollmentId}]` : ''} ("${title}") by ${currentAdminEmail}`);
-                showToast(`Certificate ${certId} issued!`);
+                const auditMsg = includeAward
+                    ? `Certificate + Award Letter issued: ${certId} / ${awardId} → ${student.name}${student.enrollmentId ? ` [${student.enrollmentId}]` : ''} ("${title}") by ${currentAdminEmail}`
+                    : `Certificate issued: ${certId} → ${student.name}${student.enrollmentId ? ` [${student.enrollmentId}]` : ''} ("${title}") by ${currentAdminEmail}`;
+                addAuditEntry('success', auditMsg);
+                showToast(includeAward ? `Certificate ${certId} + Award Letter ${awardId} issued!` : `Certificate ${certId} issued!`);
                 resetCertForm();
             } catch (e) {
                 console.error(e);
@@ -2992,6 +2973,22 @@
                         <span class="font-mono font-black text-amber-700 text-sm tracking-wider truncate">${id}</span>
                         <button onclick="window.copyCertId('${id}')" class="text-amber-600 hover:text-amber-800 text-xs font-bold px-2 shrink-0" title="Copy ID">📋 Copy</button>
                     </div>
+
+                    ${c.awardId ? `
+                    <div class="flex items-center justify-between bg-violet-50 border border-violet-200 rounded-xl px-3 py-2">
+                        <div class="min-w-0">
+                            <div class="font-mono font-black text-violet-700 text-xs tracking-wider truncate">🏅 ${c.awardId}</div>
+                            <div class="text-[10px] text-violet-500 font-bold truncate">${c.awardTitle || ''}</div>
+                        </div>
+                        <div class="flex gap-1 shrink-0">
+                            <button onclick="window.viewAwardFile('${id}')" class="text-violet-600 hover:text-violet-800 text-xs font-bold px-2" title="View award letter">View</button>
+                            <button onclick="window.removeAwardFromCert('${id}')" class="text-rose-500 hover:text-rose-700 text-xs font-bold px-2" title="Remove award letter">✕</button>
+                        </div>
+                    </div>` : `
+                    <button onclick="window.openAddAwardModal('${id}')" class="flex items-center justify-center gap-1.5 bg-slate-50 border border-dashed border-slate-300 rounded-xl px-3 py-2 text-xs font-bold text-slate-500 hover:bg-violet-50 hover:border-violet-300 hover:text-violet-600 transition-colors">
+                        🏅 + Add Award Letter
+                    </button>`}
+
                     <div class="text-[10px] text-slate-400 font-bold">Issued ${dateStr}${c.issuedBy ? ` · by ${c.issuedBy}` : ''}</div>
                     <div class="flex gap-2 pt-2 border-t border-slate-100">
                         <button onclick="window.viewCertFile('${id}')" class="flex-1 py-2 bg-indigo-50 text-indigo-600 font-bold rounded-lg hover:bg-indigo-100 transition-colors text-xs">View File</button>
@@ -3028,6 +3025,133 @@
             document.getElementById('cert-view-modal').classList.remove('hidden-view');
         };
 
+        // Award letter file lives on the certificate record now — takes the certificate's ID
+        // (not a separate award ID) and reads its award* fields, reusing the same view modal.
+        window.viewAwardFile = (certId) => {
+            const c = (globalData.certificates || []).find(x => (x.certificateId || x.id) === certId);
+            if (!c || !c.awardId) return;
+            document.getElementById('award-view-title').innerText = `${c.awardTitle || 'Award Letter'} — ${c.awardId}`;
+            const body = document.getElementById('award-view-body');
+            if (c.awardFileType === 'pdf') {
+                body.innerHTML = `<iframe src="${c.awardFileData}" class="w-full h-[60vh] rounded-xl border border-slate-200 bg-white"></iframe>`;
+            } else {
+                body.innerHTML = `<img src="${c.awardFileData}" class="max-h-[60vh] w-full object-contain rounded-xl shadow-md bg-white">`;
+            }
+            const dl = document.getElementById('award-view-download');
+            dl.href = c.awardFileData;
+            dl.download = `${c.awardId}${c.awardFileType === 'pdf' ? '.pdf' : '.jpg'}`;
+            document.getElementById('award-view-modal').classList.remove('hidden-view');
+        };
+
+        window.removeAwardFromCert = async (certId) => {
+            const c = (globalData.certificates || []).find(x => (x.certificateId || x.id) === certId);
+            if (!c) return;
+            if (!confirm(`Remove the award letter (${c.awardId}) from this record? The certificate itself will stay untouched — this only removes the award letter.`)) return;
+            try {
+                await updateDoc(getPublicDoc('exam_certificates', certId), {
+                    awardId: '', awardTitle: '', awardFileData: '', awardFileType: '', awardFileName: ''
+                });
+                addAuditEntry('info', `Award letter removed from certificate ${certId} by ${currentAdminEmail}`);
+                showToast("Award letter removed.");
+            } catch (e) { alert("Failed to remove award letter."); }
+        };
+
+        // --- Add Award Letter Later modal — for a certificate that was issued without one ---
+        let addAwardModalCertId = null;
+        let addAwardModalFileData = '';
+        let addAwardModalFileType = '';
+        let addAwardModalFileName = '';
+
+        window.openAddAwardModal = (certId) => {
+            const c = (globalData.certificates || []).find(x => (x.certificateId || x.id) === certId);
+            if (!c) return;
+            addAwardModalCertId = certId;
+            addAwardModalFileData = ''; addAwardModalFileType = ''; addAwardModalFileName = '';
+            document.getElementById('add-award-modal-cert-label').innerText = `${c.title} — ${certId} (${c.studentName || 'Unknown'})`;
+            document.getElementById('add-award-modal-id-field').value = generateAwardId();
+            document.getElementById('add-award-modal-title').value = '';
+            document.getElementById('add-award-modal-file-input').value = '';
+            document.getElementById('add-award-modal-file-name').innerText = 'No file selected.';
+            document.getElementById('add-award-modal-preview-img').classList.add('hidden');
+            document.getElementById('add-award-modal-preview-icon').classList.remove('hidden');
+            document.getElementById('modal-add-award').classList.remove('hidden-view');
+        };
+
+        window.closeAddAwardModal = () => {
+            document.getElementById('modal-add-award').classList.add('hidden-view');
+            addAwardModalCertId = null;
+        };
+
+        window.regenerateAddAwardModalId = () => {
+            const field = document.getElementById('add-award-modal-id-field');
+            if (field) field.value = generateAwardId();
+        };
+
+        window.handleAddAwardModalFileUpload = async (event) => {
+            const file = event.target.files[0];
+            if (!file) return;
+            const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+            try {
+                if (isPdf) {
+                    if (file.size > 700 * 1024) {
+                        alert("This PDF is too large (max ~700KB). Please compress it or upload an image instead.");
+                        event.target.value = '';
+                        return;
+                    }
+                    addAwardModalFileData = await new Promise((resolve, reject) => {
+                        const reader = new FileReader();
+                        reader.onload = e => resolve(e.target.result);
+                        reader.onerror = reject;
+                        reader.readAsDataURL(file);
+                    });
+                    addAwardModalFileType = 'pdf';
+                } else {
+                    addAwardModalFileData = await resizeImageToBase64(file, 1000);
+                    addAwardModalFileType = 'image';
+                }
+                addAwardModalFileName = file.name;
+                document.getElementById('add-award-modal-file-name').innerText = `Selected: ${file.name}`;
+                const imgEl = document.getElementById('add-award-modal-preview-img');
+                const iconEl = document.getElementById('add-award-modal-preview-icon');
+                if (addAwardModalFileType === 'image') {
+                    imgEl.src = addAwardModalFileData;
+                    imgEl.classList.remove('hidden');
+                    iconEl.classList.add('hidden');
+                } else {
+                    imgEl.classList.add('hidden');
+                    iconEl.classList.remove('hidden');
+                    iconEl.innerText = '📕';
+                }
+            } catch (e) {
+                alert("Failed to process this file. Please try another image or PDF.");
+                event.target.value = '';
+            }
+        };
+
+        window.confirmAddAwardModal = async () => {
+            if (!addAwardModalCertId) return;
+            const title = document.getElementById('add-award-modal-title').value.trim();
+            if (!title) return alert("Please enter an Award Title.");
+            if (!addAwardModalFileData) return alert("Please upload the award letter file.");
+            let awardId = document.getElementById('add-award-modal-id-field').value.trim().toUpperCase().replace(/\s+/g, '-');
+            if (!awardId) return alert("Award ID cannot be empty.");
+            const dupAward = (globalData.certificates || []).find(c => c.awardId && c.awardId.toUpperCase() === awardId && (c.certificateId || c.id) !== addAwardModalCertId);
+            if (dupAward) return alert(`Award ID "${awardId}" is already in use on another record. Please regenerate.`);
+
+            try {
+                await updateDoc(getPublicDoc('exam_certificates', addAwardModalCertId), {
+                    awardId, awardTitle: title,
+                    awardFileData: addAwardModalFileData, awardFileType: addAwardModalFileType, awardFileName: addAwardModalFileName
+                });
+                addAuditEntry('success', `Award letter added to certificate ${addAwardModalCertId}: ${awardId} by ${currentAdminEmail}`);
+                showToast(`Award Letter ${awardId} added!`);
+                window.closeAddAwardModal();
+            } catch (e) {
+                console.error(e);
+                alert("Failed to add award letter. The file may be too large, or check your network.");
+            }
+        };
+
         window.toggleCertStatus = async (certId) => {
             const c = (globalData.certificates || []).find(x => (x.certificateId || x.id) === certId);
             if (!c) return;
@@ -3056,7 +3180,6 @@
         // both a certificate and an award letter for the same achievement; they are stored, viewed,
         // and downloaded independently of one another.)
         // ========================
-        let selectedAwardStudentId = null;
         let awardFileData = '';
         let awardFileType = '';
         let awardFileName = '';
@@ -3064,7 +3187,9 @@
         const generateAwardId = () => {
             const year = new Date().getFullYear();
             const prefix = `AWARD-${year}-`;
-            const usedIds = new Set((globalData.awardLetters || []).map(a => (a.awardId || a.id || '').toUpperCase()));
+            // Award IDs now live on certificate records (see issueCertificate), so uniqueness is
+            // checked against every certificate's awardId field rather than a separate collection.
+            const usedIds = new Set((globalData.certificates || []).map(c => (c.awardId || '').toUpperCase()).filter(Boolean));
             const existingNums = [...usedIds]
                 .filter(id => id.startsWith(prefix))
                 .map(id => parseInt(id.slice(prefix.length), 10))
@@ -3083,83 +3208,7 @@
             if (field) field.value = generateAwardId();
         };
 
-        // --- Winner Place preview ---
-        document.addEventListener('change', (e) => {
-            if (e.target.id === 'award-winner-place' || e.target.id === 'award-winner-season') {
-                const place = document.getElementById('award-winner-place')?.value;
-                const season = (document.getElementById('award-winner-season')?.value || '').trim();
-                const preview = document.getElementById('award-winner-preview');
-                const medal = document.getElementById('award-winner-preview-medal');
-                const label = document.getElementById('award-winner-preview-label');
-                const seasonEl = document.getElementById('award-winner-preview-season');
-                if (place) {
-                    preview.classList.remove('hidden');
-                    const MAP = { first: { medal: '🥇', label: '1st Place Winner', border: 'border-amber-200', bg: 'bg-amber-50' },
-                                  second: { medal: '🥈', label: '2nd Place Winner', border: 'border-slate-300', bg: 'bg-slate-100' },
-                                  third: { medal: '🥉', label: '3rd Place Winner', border: 'border-orange-200', bg: 'bg-orange-50' } };
-                    const m = MAP[place];
-                    medal.innerText = m.medal;
-                    label.innerText = m.label;
-                    seasonEl.innerText = season ? `${season}` : 'No season specified';
-                    preview.className = `mt-3 p-3 rounded-xl border-2 ${m.border} ${m.bg} flex items-center gap-3`;
-                } else {
-                    preview.classList.add('hidden');
-                }
-            }
-        });
-
         // --- Recipient student picker (single select) ---
-        window.filterAwardStudentPicker = () => {
-            const query = document.getElementById('award-student-search')?.value?.toLowerCase() || '';
-            const dropdown = document.getElementById('award-student-dropdown');
-            if (!dropdown) return;
-            if (!query) { dropdown.classList.add('hidden'); return; }
-
-            const matches = globalData.users.filter(u =>
-                u.name?.toLowerCase().includes(query) || u.enrollmentId?.toLowerCase().includes(query)
-            ).slice(0, 10);
-
-            if (matches.length === 0) {
-                dropdown.innerHTML = `<div class="p-3 text-xs text-slate-400 font-bold">No matching students found.</div>`;
-                dropdown.classList.remove('hidden');
-                return;
-            }
-
-            dropdown.innerHTML = matches.map(u => `
-                <div class="flex items-center gap-3 px-4 py-3 hover:bg-violet-50 cursor-pointer border-b border-slate-50 last:border-0"
-                     onclick="window.selectAwardStudent('${u.id}')">
-                    <img src="${u.avatar || 'https://api.dicebear.com/9.x/avataaars/svg?seed=' + u.id}" class="w-7 h-7 rounded-full border border-slate-200 bg-white">
-                    <div>
-                        <div class="font-bold text-slate-800 text-sm">${u.name}</div>
-                        <div class="text-[10px] text-slate-400">${u.enrollmentId || 'No enrollment ID'} · ${u.id.slice(0, 12)}…</div>
-                    </div>
-                </div>`).join('');
-            dropdown.classList.remove('hidden');
-        };
-
-        window.selectAwardStudent = (uid) => {
-            const u = globalData.users.find(x => x.id === uid);
-            if (!u) return;
-            selectedAwardStudentId = uid;
-            document.getElementById('award-student-avatar').src = u.avatar || 'https://api.dicebear.com/9.x/avataaars/svg?seed=' + u.id;
-            document.getElementById('award-student-name').innerText = u.name;
-            document.getElementById('award-student-eid').innerText = u.enrollmentId || (u.id.slice(0, 10) + '…');
-            document.getElementById('award-selected-student').classList.remove('hidden');
-            document.getElementById('award-student-search').value = '';
-            document.getElementById('award-student-dropdown').classList.add('hidden');
-        };
-
-        window.clearAwardStudent = () => {
-            selectedAwardStudentId = null;
-            document.getElementById('award-selected-student')?.classList.add('hidden');
-        };
-
-        document.addEventListener('click', (e) => {
-            if (!e.target.closest('#award-student-search') && !e.target.closest('#award-student-dropdown')) {
-                document.getElementById('award-student-dropdown')?.classList.add('hidden');
-            }
-        });
-
         // --- File upload (image gets compressed; PDF stored as-is with a size guard) ---
         window.handleAwardFileUpload = async (event) => {
             const file = event.target.files[0];
@@ -3202,195 +3251,34 @@
             }
         };
 
-        const resetAwardForm = () => {
-            window.clearAwardStudent();
-            document.getElementById('award-title').value = '';
-            document.getElementById('award-desc').value = '';
-            document.getElementById('award-issue-date').value = new Date().toISOString().slice(0, 10);
-            document.getElementById('award-file-input').value = '';
-            document.getElementById('award-file-name').innerText = 'No file selected. Images are compressed automatically; keep PDFs under ~700KB.';
-            document.getElementById('award-file-preview-img').classList.add('hidden');
-            document.getElementById('award-file-preview-img').src = '';
-            document.getElementById('award-file-preview-icon').classList.remove('hidden');
-            document.getElementById('award-file-preview-icon').innerText = '📄';
+        const resetAwardSubsection = () => {
+            const titleEl = document.getElementById('award-title');
+            const fileInput = document.getElementById('award-file-input');
+            const fileName = document.getElementById('award-file-name');
+            const previewImg = document.getElementById('award-file-preview-img');
+            const previewIcon = document.getElementById('award-file-preview-icon');
+            if (titleEl) titleEl.value = '';
+            if (fileInput) fileInput.value = '';
+            if (fileName) fileName.innerText = 'No file selected. Images are compressed automatically; keep PDFs under ~700KB.';
+            if (previewImg) { previewImg.classList.add('hidden'); previewImg.src = ''; }
+            if (previewIcon) { previewIcon.classList.remove('hidden'); previewIcon.innerText = '📄'; }
             awardFileData = ''; awardFileType = ''; awardFileName = '';
-            const wp = document.getElementById('award-winner-place');
-            const ws = document.getElementById('award-winner-season');
-            const wprev = document.getElementById('award-winner-preview');
-            if (wp) wp.value = '';
-            if (ws) ws.value = '';
-            if (wprev) wprev.classList.add('hidden');
             window.regenerateAwardId();
         };
 
-        window.issueAwardLetter = async () => {
-            if (!selectedAwardStudentId) return alert("Please select a recipient student.");
-            const student = globalData.users.find(u => u.id === selectedAwardStudentId);
-            if (!student) return alert("Selected student could not be found. Please re-select.");
-
-            const title = document.getElementById('award-title').value.trim();
-            if (!title) return alert("Please enter an Award Title.");
-            if (!awardFileData) return alert("Please upload the award letter file (image or PDF).");
-
-            let awardId = document.getElementById('award-id-field').value.trim().toUpperCase().replace(/\s+/g, '-');
-            if (!awardId) return alert("Award ID cannot be empty.");
-
-            const dupLocal = (globalData.awardLetters || []).find(a => (a.awardId || a.id || '').toUpperCase() === awardId);
-            if (dupLocal) return alert(`Award ID "${awardId}" is already in use. Please regenerate or choose a different ID to avoid issuing a duplicate award letter.`);
-
-            const issueDateStr = document.getElementById('award-issue-date').value;
-            const issueTs = issueDateStr ? new Date(issueDateStr).getTime() : Date.now();
-
-            const payload = {
-                awardId: awardId,
-                studentId: student.id,
-                studentName: student.name,
-                enrollmentId: student.enrollmentId || '',
-                title,
-                description: document.getElementById('award-desc').value.trim(),
-                fileData: awardFileData,
-                fileType: awardFileType,
-                fileName: awardFileName,
-                issueDate: issueTs,
-                status: 'active',
-                issuedBy: currentAdminEmail,
-                createdAt: Date.now(),
-                winnerPlace: document.getElementById('award-winner-place')?.value || '',
-                winnerSeason: (document.getElementById('award-winner-season')?.value || '').trim()
-            };
-
-            try {
-                const ref = getPublicDoc('exam_award_letters', awardId);
-                const existingSnap = await getDoc(ref); // final race-condition check before writing
-                if (existingSnap.exists()) {
-                    return alert(`Award ID "${awardId}" was just taken by another record. Please regenerate the ID and try again.`);
-                }
-                await setDoc(ref, payload);
-                addAuditEntry('success', `Award letter issued: ${awardId} → ${student.name}${student.enrollmentId ? ` [${student.enrollmentId}]` : ''} ("${title}") by ${currentAdminEmail}`);
-                showToast(`Award Letter ${awardId} issued!`);
-                resetAwardForm();
-            } catch (e) {
-                console.error(e);
-                alert("Failed to issue award letter. The file may be too large for the database (try a smaller image/PDF), or check your network.");
-            }
-        };
-
-        const renderAwardLetters = () => {
-            const listEl = document.getElementById('award-list');
-            const emptyEl = document.getElementById('award-empty');
-            if (!listEl) return;
-
-            const search = (document.getElementById('award-search')?.value || '').toLowerCase();
-            const statusFilter = document.getElementById('award-status-filter')?.value || 'all';
-
-            let filtered = (globalData.awardLetters || []).filter(a => {
-                if (statusFilter !== 'all' && (a.status || 'active') !== statusFilter) return false;
-                if (!search) return true;
-                return (a.studentName || '').toLowerCase().includes(search) ||
-                    (a.enrollmentId || '').toLowerCase().includes(search) ||
-                    (a.awardId || a.id || '').toLowerCase().includes(search) ||
-                    (a.title || '').toLowerCase().includes(search);
-            }).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-
-            if (filtered.length === 0) {
-                listEl.innerHTML = '';
-                emptyEl.classList.remove('hidden');
-                return;
-            }
-            emptyEl.classList.add('hidden');
-
-            listEl.innerHTML = filtered.map(a => {
-                const id = a.awardId || a.id;
-                const isRevoked = a.status === 'revoked';
-                const statusBadge = isRevoked
-                    ? `<span class="px-2 py-1 bg-rose-100 text-rose-700 text-[10px] font-black rounded uppercase">Revoked</span>`
-                    : `<span class="px-2 py-1 bg-emerald-100 text-emerald-700 text-[10px] font-black rounded uppercase">Active</span>`;
-                const student = globalData.users.find(u => u.id === a.studentId);
-                const avatar = student?.avatar || ('https://api.dicebear.com/9.x/avataaars/svg?seed=' + a.studentId);
-                const dateStr = a.issueDate ? new Date(a.issueDate).toLocaleDateString() : '—';
-                return `
-                <div class="bg-white p-6 rounded-2xl border ${isRevoked ? 'border-rose-200' : 'border-slate-200'} shadow-sm flex flex-col gap-3">
-                    <div class="flex justify-between items-start gap-3">
-                        <div class="flex items-center gap-3 min-w-0">
-                            <img src="${avatar}" class="w-10 h-10 rounded-full border border-slate-200 bg-white object-cover shrink-0">
-                            <div class="min-w-0">
-                                <div class="font-bold text-slate-800 truncate">${a.studentName || 'Unknown'}</div>
-                                <div class="text-[10px] font-mono text-violet-500 font-black">${a.enrollmentId || '—'}</div>
-                            </div>
-                        </div>
-                        ${statusBadge}
-                    </div>
-                    <div>
-                        <div class="font-black text-slate-800">${a.title}</div>
-                        ${a.description ? `<div class="text-xs text-slate-500 mt-1 line-clamp-2">${a.description}</div>` : ''}
-                        ${a.winnerPlace ? (() => {
-                            const MAP = { first: { medal: '🥇', label: '1st Place', bg: 'bg-amber-50', text: 'text-amber-800', border: 'border-amber-200' }, second: { medal: '🥈', label: '2nd Place', bg: 'bg-slate-100', text: 'text-slate-700', border: 'border-slate-300' }, third: { medal: '🥉', label: '3rd Place', bg: 'bg-orange-50', text: 'text-orange-800', border: 'border-orange-200' } };
-                            const m = MAP[a.winnerPlace];
-                            if (!m) return '';
-                            return `<div class="inline-flex items-center gap-2 mt-2 px-3 py-1.5 ${m.bg} border ${m.border} rounded-xl text-xs font-black ${m.text}"><span>${m.medal}</span> ${m.label}${a.winnerSeason ? ` · ${a.winnerSeason}` : ''}</div>`;
-                        })() : ''}
-                    </div>
-                    <div class="flex items-center justify-between bg-violet-50 border border-violet-200 rounded-xl px-3 py-2">
-                        <span class="font-mono font-black text-violet-700 text-sm tracking-wider truncate">${id}</span>
-                        <button onclick="window.copyAwardId('${id}')" class="text-violet-600 hover:text-violet-800 text-xs font-bold px-2 shrink-0" title="Copy ID">📋 Copy</button>
-                    </div>
-                    <div class="text-[10px] text-slate-400 font-bold">Issued ${dateStr}${a.issuedBy ? ` · by ${a.issuedBy}` : ''}</div>
-                    <div class="flex gap-2 pt-2 border-t border-slate-100">
-                        <button onclick="window.viewAwardFile('${id}')" class="flex-1 py-2 bg-violet-50 text-violet-600 font-bold rounded-lg hover:bg-violet-100 transition-colors text-xs">View File</button>
-                        <button onclick="window.toggleAwardStatus('${id}')" class="flex-1 py-2 ${isRevoked ? 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100' : 'bg-amber-50 text-amber-700 hover:bg-amber-100'} font-bold rounded-lg transition-colors text-xs">${isRevoked ? 'Reinstate' : 'Revoke'}</button>
-                        <button onclick="window.deleteAwardLetter('${id}')" class="px-3 py-2 bg-rose-50 text-rose-600 font-bold rounded-lg hover:bg-rose-100 transition-colors text-xs">🗑️</button>
-                    </div>
-                </div>`;
-            }).join('');
-        };
-
-        window.filterAwardLetters = () => renderAwardLetters();
-
-        window.copyAwardId = (id) => {
-            if (navigator.clipboard?.writeText) {
-                navigator.clipboard.writeText(id).then(() => showToast("Award ID copied!")).catch(() => showToast("Could not copy — please copy manually.", true));
+        window.toggleAwardSubsection = () => {
+            const checked = document.getElementById('cert-include-award')?.checked;
+            const section = document.getElementById('cert-award-subsection');
+            if (!section) return;
+            if (checked) {
+                section.classList.remove('hidden');
+                if (!document.getElementById('award-id-field').value) window.regenerateAwardId();
             } else {
-                showToast("Could not copy — please copy manually.", true);
+                section.classList.add('hidden');
+                resetAwardSubsection();
             }
         };
 
-        window.viewAwardFile = (awardId) => {
-            const a = (globalData.awardLetters || []).find(x => (x.awardId || x.id) === awardId);
-            if (!a) return;
-            document.getElementById('award-view-title').innerText = `${a.title} — ${awardId}`;
-            const body = document.getElementById('award-view-body');
-            if (a.fileType === 'pdf') {
-                body.innerHTML = `<iframe src="${a.fileData}" class="w-full h-[60vh] rounded-xl border border-slate-200 bg-white"></iframe>`;
-            } else {
-                body.innerHTML = `<img src="${a.fileData}" class="max-h-[60vh] w-full object-contain rounded-xl shadow-md bg-white">`;
-            }
-            const dl = document.getElementById('award-view-download');
-            dl.href = a.fileData;
-            dl.download = `${awardId}${a.fileType === 'pdf' ? '.pdf' : '.jpg'}`;
-            document.getElementById('award-view-modal').classList.remove('hidden-view');
-        };
-
-        window.toggleAwardStatus = async (awardId) => {
-            const a = (globalData.awardLetters || []).find(x => (x.awardId || x.id) === awardId);
-            if (!a) return;
-            const newStatus = a.status === 'revoked' ? 'active' : 'revoked';
-            if (newStatus === 'revoked' && !confirm(`Revoke award letter ${awardId}? It will be flagged invalid on verification, but not deleted.`)) return;
-            try {
-                await updateDoc(getPublicDoc('exam_award_letters', awardId), { status: newStatus });
-                addAuditEntry(newStatus === 'revoked' ? 'danger' : 'success', `Award letter ${awardId} marked ${newStatus} by ${currentAdminEmail}`);
-                showToast(`Award letter ${newStatus === 'revoked' ? 'revoked' : 'reinstated'}.`);
-            } catch (e) { alert("Failed to update award letter status."); }
-        };
-
-        window.deleteAwardLetter = async (awardId) => {
-            const a = (globalData.awardLetters || []).find(x => (x.awardId || x.id) === awardId);
-            if (!confirm(`Permanently delete award letter ${awardId}${a ? ` for ${a.studentName}` : ''}? This cannot be undone.`)) return;
-            try {
-                await deleteDoc(getPublicDoc('exam_award_letters', awardId));
-                addAuditEntry('danger', `Award letter deleted: ${awardId} by ${currentAdminEmail}`);
-                showToast("Award letter deleted.");
-            } catch (e) { alert("Failed to delete award letter."); }
-        };
 
         // ========================
         // STUDY CONTENT
