@@ -725,6 +725,13 @@
                     </div>
                 </div>
 
+                <div class="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm space-y-6">
+                    <h3 class="font-black text-lg text-slate-800 border-b border-slate-100 pb-2">🏅 Rank Levels</h3>
+                    <p class="text-xs text-slate-500 leading-relaxed">Shown on every student's profile as "Rank Milestones", and next to each test attempt to show what rank that XP amount reached. Add, remove, rename, or re-threshold ranks as needed — students always see whatever's saved here.</p>
+                    <div id="rank-levels-list" class="space-y-3"></div>
+                    <button onclick="window.addRankLevelRow()" type="button" class="w-full py-3 border-2 border-dashed border-slate-300 rounded-xl text-slate-500 font-bold text-sm hover:border-indigo-300 hover:text-indigo-600 transition-colors">+ Add Rank Level</button>
+                </div>
+
                 <button onclick="window.saveSettings()" class="w-full py-4 bg-indigo-600 text-white font-black text-lg rounded-xl shadow-md hover:bg-indigo-700 transition-colors">Save All Platform Configurations</button>
             </div>
 
@@ -1382,6 +1389,7 @@
                 document.getElementById('set-allow-review').checked = globalData.config.allowReviewAnswers === true;
                 document.getElementById('set-allow-retake').checked = globalData.config.allowRetake !== false;
                 document.getElementById('set-pass-threshold').value = globalData.config.passThreshold ?? 60;
+                window.renderRankLevelsEditor();
                 if (typeof window.renderAdminSettings === 'function') window.renderAdminSettings();
             }
             if (tab === 'audit') renderAuditLog();
@@ -1939,11 +1947,27 @@
                     </div>`;
                 }
 
+                const folderThumbHTML = s.folderImage
+                    ? `<img src="${s.folderImage}" class="w-16 h-16 rounded-2xl object-cover border-2 border-slate-200 shadow-sm flex-shrink-0">`
+                    : `<div class="w-16 h-16 rounded-2xl bg-slate-100 flex items-center justify-center text-2xl flex-shrink-0">📁</div>`;
+
                 return `<div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
-                    <div class="flex justify-between items-center mb-2">
-                        <h4 class="font-black text-xl text-slate-800">${s.name}</h4>${status}
+                    <div class="flex items-start gap-4 mb-2">
+                        <div class="relative group flex-shrink-0">
+                            ${folderThumbHTML}
+                            <label class="absolute inset-0 flex items-center justify-center bg-slate-900/0 group-hover:bg-slate-900/50 rounded-2xl cursor-pointer transition-all opacity-0 group-hover:opacity-100" title="${s.folderImage ? 'Change' : 'Upload'} folder photo">
+                                <span class="text-white text-lg">📷</span>
+                                <input type="file" accept="image/*" class="hidden" onchange="window.uploadSeasonFolderImage('${s.id}', this)">
+                            </label>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <div class="flex justify-between items-center mb-2">
+                                <h4 class="font-black text-xl text-slate-800">${s.name}</h4>${status}
+                            </div>
+                            <div class="text-xs font-bold text-slate-500 mb-1">📅 ${new Date(s.start).toLocaleDateString()} — ${new Date(s.end).toLocaleDateString()}</div>
+                            <p class="text-[10px] text-slate-400 font-medium">One shared photo shows on both the Study and Test folder for this season — hover the icon to ${s.folderImage ? 'change' : 'upload'} it.</p>
+                        </div>
                     </div>
-                    <div class="text-xs font-bold text-slate-500 mb-2">📅 ${new Date(s.start).toLocaleDateString()} — ${new Date(s.end).toLocaleDateString()}</div>
                     ${winDisplay}
                     <div class="mt-4 flex gap-3 border-t border-slate-100 pt-4">
                         ${!s.winner ? `<button onclick="window.announceSeasonWinner('${s.id}')" class="px-4 py-2 bg-indigo-50 text-indigo-700 font-bold rounded-xl hover:bg-indigo-100 transition-colors text-sm">Calculate Winners & Check Draws</button>` : ''}
@@ -1951,6 +1975,22 @@
                     </div>
                 </div>`;
             }).join('');
+        };
+
+        window.uploadSeasonFolderImage = async (seasonId, inputEl) => {
+            const file = inputEl.files[0];
+            if (!file) return;
+            try {
+                const imageData = await resizeImageToBase64(file, 600);
+                await updateDoc(getPublicDoc('exam_seasons', seasonId), { folderImage: imageData });
+                addAuditEntry('success', `Season folder photo updated: ${seasonId} by ${currentAdminEmail}`);
+                showToast("Folder photo updated! 📁");
+            } catch (e) {
+                console.error(e);
+                alert("Failed to upload folder photo. Please try a smaller image.");
+            } finally {
+                inputEl.value = '';
+            }
         };
 
         window.createSeason = async () => {
@@ -2179,6 +2219,7 @@
                 allowReviewAnswers: document.getElementById('set-allow-review').checked,
                 allowRetake: document.getElementById('set-allow-retake').checked,
                 passThreshold: parseInt(document.getElementById('set-pass-threshold').value) || 60,
+                ranks: window.collectRankLevelsFromEditor(),
                 admins: globalData.config.admins
             };
             try {
@@ -2189,6 +2230,62 @@
                 document.getElementById('sidebar-title').innerText = nw;
                 if (tempLogoBase64) { const logo = document.getElementById('sidebar-logo'); logo.src = tempLogoBase64; logo.classList.remove('hidden'); }
             } catch(e) { alert("Failed to save settings."); }
+        };
+
+        // ── Rank Levels editor ──────────────────────────────────────────────
+        // Ranks are fully admin-defined (name + XP threshold, in ascending order) — no fixed
+        // count, admin can add or remove levels freely. Fall back to a sensible default set only
+        // when nothing has been saved yet, so existing profiles don't suddenly show nothing.
+        const DEFAULT_RANK_LEVELS = [
+            { title: 'Novice', icon: '🌱', threshold: 0 },
+            { title: 'Scholar', icon: '📘', threshold: 50 },
+            { title: 'Master', icon: '🔥', threshold: 150 },
+            { title: 'Grandmaster', icon: '👑', threshold: 300 }
+        ];
+
+        window.renderRankLevelsEditor = () => {
+            const listEl = document.getElementById('rank-levels-list');
+            if (!listEl) return;
+            const ranks = (globalData.config.ranks && globalData.config.ranks.length > 0) ? globalData.config.ranks : DEFAULT_RANK_LEVELS;
+            listEl.innerHTML = ranks.map((r, i) => window.rankLevelRowHTML(r, i)).join('');
+        };
+
+        window.rankLevelRowHTML = (r, i) => `
+            <div class="flex items-center gap-2 rank-level-row" data-idx="${i}">
+                <input type="text" value="${(r.icon || '').replace(/"/g, '&quot;')}" placeholder="🌱" maxlength="4" class="w-14 px-2 py-2.5 rounded-lg bg-slate-50 border border-slate-200 font-bold text-center outline-none focus:border-indigo-500 rank-icon-input">
+                <input type="text" value="${(r.title || '').replace(/"/g, '&quot;')}" placeholder="Rank name" class="flex-1 px-3 py-2.5 rounded-lg bg-slate-50 border border-slate-200 font-bold outline-none focus:border-indigo-500 rank-title-input">
+                <input type="number" value="${r.threshold ?? 0}" min="0" placeholder="XP" class="w-24 px-3 py-2.5 rounded-lg bg-slate-50 border border-slate-200 font-bold outline-none focus:border-indigo-500 rank-threshold-input">
+                <span class="text-[10px] font-black text-slate-400 uppercase shrink-0">XP</span>
+                <button onclick="window.removeRankLevelRow(this)" type="button" class="w-9 h-9 shrink-0 flex items-center justify-center rounded-lg bg-rose-50 text-rose-500 hover:bg-rose-100 transition-colors font-bold">✕</button>
+            </div>`;
+
+        window.addRankLevelRow = () => {
+            const listEl = document.getElementById('rank-levels-list');
+            if (!listEl) return;
+            const idx = listEl.querySelectorAll('.rank-level-row').length;
+            listEl.insertAdjacentHTML('beforeend', window.rankLevelRowHTML({ title: '', icon: '⭐', threshold: 0 }, idx));
+        };
+
+        window.removeRankLevelRow = (btn) => {
+            const row = btn.closest('.rank-level-row');
+            if (!row) return;
+            const listEl = document.getElementById('rank-levels-list');
+            if (listEl && listEl.querySelectorAll('.rank-level-row').length <= 1) {
+                return alert("At least one rank level is required.");
+            }
+            row.remove();
+        };
+
+        // Reads whatever's currently in the editor rows into a clean, sorted array — used both
+        // when saving settings and (indirectly) anywhere ranks need to be read from the live form.
+        window.collectRankLevelsFromEditor = () => {
+            const rows = document.querySelectorAll('#rank-levels-list .rank-level-row');
+            const ranks = [...rows].map(row => ({
+                title: row.querySelector('.rank-title-input')?.value.trim() || 'Rank',
+                icon: row.querySelector('.rank-icon-input')?.value.trim() || '⭐',
+                threshold: parseInt(row.querySelector('.rank-threshold-input')?.value, 10) || 0
+            })).sort((a, b) => a.threshold - b.threshold);
+            return ranks.length > 0 ? ranks : DEFAULT_RANK_LEVELS;
         };
 
         window.renderAdminSettings = () => {
