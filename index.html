@@ -608,16 +608,6 @@
                     </div>
                 </div>
 
-                <!-- Folder Cover Images -->
-                <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-4">
-                    <div>
-                        <h3 class="font-black text-lg text-slate-800">Folder Cover Images</h3>
-                        <p class="text-slate-500 text-xs mt-1">Every Category/Topic you use above becomes a "folder" students see in the Study tab. Set a cover image for any folder here — each season's folders are separate, so "Chapter 1" in one season can look different from "Chapter 1" in another.</p>
-                    </div>
-                    <div id="sc-folder-covers-list" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4"></div>
-                    <div id="sc-folder-covers-empty" class="hidden text-center py-8 text-slate-400 font-bold text-sm bg-slate-50 rounded-2xl border border-slate-200">No folders yet — add study material with a Category/Topic above, and it'll appear here.</div>
-                </div>
-
                 <!-- Filter + list -->
                 <div class="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
                     <h3 class="text-xl font-black text-slate-800">Published Materials (<span id="sc-total-count">0</span>)</h3>
@@ -1110,7 +1100,7 @@
         const getPublicCol = (colName) => collection(db, 'artifacts', appId, 'public', 'data', colName);
         const getPublicDoc = (colName, docId) => doc(db, 'artifacts', appId, 'public', 'data', colName, docId);
 
-        let globalData = { users: [], results: [], quizzes: [], config: {}, seasons: [], certificates: [], studyContent: [], categoryCovers: [] };
+        let globalData = { users: [], results: [], quizzes: [], config: {}, seasons: [], certificates: [], studyContent: [] };
         let activeQuizEditor = null;
         let tempLogoBase64 = "";
         let user = null;
@@ -1443,16 +1433,8 @@
                 if (countEl) countEl.innerText = globalData.studyContent.length;
                 if (!document.getElementById('view-study').classList.contains('hidden-view')) {
                     renderStudyAdmin();
-                    renderFolderCovers();
                 }
             }, err => console.error("Study content sync error:", err));
-
-            onSnapshot(getPublicCol('study_category_covers'), snap => {
-                globalData.categoryCovers = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-                if (!document.getElementById('view-study').classList.contains('hidden-view')) {
-                    renderFolderCovers();
-                }
-            }, err => console.error("Folder covers sync error:", err));
         };
 
         // ========================
@@ -3399,7 +3381,6 @@
                     }).join('');
             }
             renderStudyAdmin();
-            renderFolderCovers();
         };
 
         window.addInstaUrlField = () => {
@@ -3587,106 +3568,6 @@
                     </div>
                 </div>`;
             }).join('');
-        };
-
-        // ========================
-        // FOLDER COVER IMAGES
-        // ========================
-        // A "folder" is a season + category-name pair (e.g. Season "Winter 2026" → category
-        // "Chapter 1"). Categories themselves are just a free-text field on each study content
-        // item, not their own documents — so covers are stored in a small separate collection,
-        // keyed deterministically from seasonId + category, purely to attach a cover image.
-        // Deleting every content item in a folder does not delete its cover automatically (in case
-        // the admin is just re-adding items later) — covers are only removed by an explicit action.
-        const folderCoverKey = (seasonId, category) => {
-            const safeCat = (category || '__general__').trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'general';
-            return `${seasonId || 'nogeneral'}__${safeCat}`;
-        };
-
-        const renderFolderCovers = () => {
-            const grid = document.getElementById('sc-folder-covers-list');
-            const empty = document.getElementById('sc-folder-covers-empty');
-            if (!grid) return;
-
-            // Discover every distinct (seasonId, category) pair currently in use across all
-            // published study content — these are the "folders" that actually exist right now.
-            const seen = new Map();
-            (globalData.studyContent || []).forEach(item => {
-                const key = folderCoverKey(item.seasonId, item.category);
-                if (!seen.has(key)) {
-                    seen.set(key, {
-                        key,
-                        seasonId: item.seasonId || '',
-                        category: item.category && item.category.trim() ? item.category.trim() : 'General',
-                        count: 0
-                    });
-                }
-                seen.get(key).count++;
-            });
-
-            const folders = [...seen.values()].sort((a, b) => a.category.localeCompare(b.category));
-
-            if (folders.length === 0) {
-                grid.innerHTML = '';
-                empty.classList.remove('hidden');
-                return;
-            }
-            empty.classList.add('hidden');
-
-            grid.innerHTML = folders.map(f => {
-                const cover = (globalData.categoryCovers || []).find(c => c.id === f.key);
-                const season = f.seasonId ? globalData.seasons.find(s => s.id === f.seasonId) : null;
-                const seasonLabel = season ? season.name : 'General (no season)';
-                const inputId = `folder-cover-input-${f.key}`;
-                return `
-                <div class="rounded-2xl border border-slate-200 overflow-hidden bg-slate-50 group relative">
-                    <div class="aspect-square w-full bg-gradient-to-br from-indigo-100 to-violet-100 flex items-center justify-center overflow-hidden">
-                        ${cover?.imageData
-                            ? `<img src="${cover.imageData}" class="w-full h-full object-cover">`
-                            : `<span class="text-3xl">📁</span>`}
-                    </div>
-                    <div class="p-2.5">
-                        <div class="font-black text-slate-800 text-xs truncate">${f.category}</div>
-                        <div class="text-[9px] text-slate-400 font-bold truncate">${seasonLabel} · ${f.count} item(s)</div>
-                    </div>
-                    <div class="absolute inset-0 bg-slate-900/0 group-hover:bg-slate-900/60 transition-all flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100">
-                        <label class="w-9 h-9 flex items-center justify-center bg-white rounded-full cursor-pointer hover:bg-indigo-50" title="Upload cover">
-                            📷
-                            <input type="file" id="${inputId}" accept="image/*" class="hidden" onchange="window.uploadFolderCover('${f.key}', this)">
-                        </label>
-                        ${cover?.imageData ? `<button onclick="window.removeFolderCover('${f.key}')" class="w-9 h-9 flex items-center justify-center bg-white rounded-full hover:bg-rose-50" title="Remove cover">🗑️</button>` : ''}
-                    </div>
-                </div>`;
-            }).join('');
-        };
-
-        window.uploadFolderCover = async (key, inputEl) => {
-            const file = inputEl.files[0];
-            if (!file) return;
-            try {
-                const imageData = await resizeImageToBase64(file, 600);
-                await setDoc(getPublicDoc('study_category_covers', key), {
-                    imageData,
-                    updatedAt: Date.now(),
-                    updatedBy: currentAdminEmail
-                });
-                addAuditEntry('success', `Folder cover updated: ${key} by ${currentAdminEmail}`);
-                showToast("Folder cover updated! 📁");
-            } catch (e) {
-                console.error(e);
-                alert("Failed to upload cover image. Please try a smaller image.");
-            } finally {
-                inputEl.value = '';
-            }
-        };
-
-        window.removeFolderCover = async (key) => {
-            if (!confirm("Remove this folder's cover image? Students will see the default folder icon instead.")) return;
-            try {
-                await deleteDoc(getPublicDoc('study_category_covers', key));
-                addAuditEntry('info', `Folder cover removed: ${key} by ${currentAdminEmail}`);
-                showToast("Cover image removed.");
-            } catch (e) { alert("Failed to remove cover image."); }
         };
 
         window.deleteStudyContent = async (id) => {
