@@ -377,20 +377,7 @@
                         <p class="text-[10px] text-slate-400 mb-4 ml-8">Optional. Not every certificate needs one — check this only if you have an award letter to attach now. You can also come back and add it to this record later from the list below.</p>
 
                         <div id="cert-award-subsection" class="hidden space-y-6 bg-violet-50/50 border border-violet-100 rounded-2xl p-5">
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div>
-                                    <label class="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2">Award ID</label>
-                                    <div class="flex gap-2">
-                                        <input type="text" id="award-id-field" class="flex-1 px-4 py-3 rounded-xl bg-violet-50 border-2 border-violet-200 focus:border-violet-500 outline-none font-mono font-black text-sm tracking-wider">
-                                        <button onclick="window.regenerateAwardId()" type="button" class="px-4 py-3 bg-slate-100 hover:bg-slate-200 rounded-xl font-bold text-sm" title="Regenerate ID" data-tip="Regenerate ID">🔄</button>
-                                    </div>
-                                    <p class="text-[10px] text-slate-400 mt-1.5">Auto-generated &amp; checked for uniqueness.</p>
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2">Award Title</label>
-                                    <input type="text" id="award-title" placeholder="e.g. Season Champion Award Letter" class="w-full px-4 py-3 rounded-xl bg-white border-2 border-slate-100 focus:border-violet-500 outline-none font-bold text-sm">
-                                </div>
-                            </div>
+                            <p class="text-xs text-violet-600 font-bold -mb-2">The award letter automatically uses the same title, winner placement, and season as the certificate above — just upload the file.</p>
                             <div>
                                 <label class="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2">Award Letter File (Image or PDF)</label>
                                 <div class="flex items-center gap-4">
@@ -405,7 +392,6 @@
                                     </div>
                                 </div>
                             </div>
-                            <p class="text-[10px] text-violet-500 font-bold">Winner placement and season above apply to both the certificate and this award letter — no need to set them twice.</p>
                         </div>
                     </div>
 
@@ -2931,18 +2917,19 @@
             if (dupLocal) return alert(`Certificate ID "${certId}" is already in use. Please regenerate or choose a different ID to avoid issuing a duplicate certificate.`);
 
             // Award letter is optional — only validated/included if the admin checked the box.
+            // It shares the certificate's title and gets its own Award ID generated automatically
+            // in the background (kept internally so the "Verify" tool and existing lookups by
+            // Award ID keep working) — admin no longer enters a separate title or ID for it, since
+            // an award letter always belongs to the same certificate/achievement, never a
+            // standalone one.
             const includeAward = document.getElementById('cert-include-award')?.checked;
             let awardId = '';
             if (includeAward) {
                 if (!awardFileData) return alert("You checked 'Also include an Award Letter' — please upload the award letter file, or uncheck the box to issue the certificate without one.");
-                const awardTitle = document.getElementById('award-title').value.trim();
-                if (!awardTitle) return alert("Please enter an Award Title, or uncheck 'Also include an Award Letter'.");
-                awardId = document.getElementById('award-id-field').value.trim().toUpperCase().replace(/\s+/g, '-');
-                if (!awardId) return alert("Award ID cannot be empty.");
-                // Award IDs live on certificate records now, so uniqueness is checked against every
-                // certificate's awardId field, not a separate collection.
-                const dupAward = (globalData.certificates || []).find(c => c.awardId && c.awardId.toUpperCase() === awardId);
-                if (dupAward) return alert(`Award ID "${awardId}" is already in use on another record. Please regenerate or choose a different ID.`);
+                awardId = generateAwardId();
+                // Astronomically unlikely to collide right after generation, but guard anyway.
+                const dupAward = (globalData.certificates || []).find(c => c.awardId && c.awardId.toUpperCase() === awardId.toUpperCase());
+                if (dupAward) awardId = generateAwardId();
             }
 
             const issueDateStr = document.getElementById('cert-issue-date').value;
@@ -2968,7 +2955,7 @@
                 // this same record (rather than a separate collection) so a certificate and its
                 // award letter are always issued, viewed, revoked, and deleted together as one unit.
                 awardId: includeAward ? awardId : '',
-                awardTitle: includeAward ? document.getElementById('award-title').value.trim() : '',
+                awardTitle: includeAward ? title : '',
                 awardFileData: includeAward ? awardFileData : '',
                 awardFileType: includeAward ? awardFileType : '',
                 awardFileName: includeAward ? awardFileName : ''
@@ -3282,11 +3269,6 @@
             return candidate;
         };
 
-        window.regenerateAwardId = () => {
-            const field = document.getElementById('award-id-field');
-            if (field) field.value = generateAwardId();
-        };
-
         // --- Recipient student picker (single select) ---
         // --- File upload (image gets compressed; PDF stored as-is with a size guard) ---
         window.handleAwardFileUpload = async (event) => {
@@ -3331,18 +3313,15 @@
         };
 
         const resetAwardSubsection = () => {
-            const titleEl = document.getElementById('award-title');
             const fileInput = document.getElementById('award-file-input');
             const fileName = document.getElementById('award-file-name');
             const previewImg = document.getElementById('award-file-preview-img');
             const previewIcon = document.getElementById('award-file-preview-icon');
-            if (titleEl) titleEl.value = '';
             if (fileInput) fileInput.value = '';
             if (fileName) fileName.innerText = 'No file selected. Images are compressed automatically; keep PDFs under ~700KB.';
             if (previewImg) { previewImg.classList.add('hidden'); previewImg.src = ''; }
             if (previewIcon) { previewIcon.classList.remove('hidden'); previewIcon.innerText = '📄'; }
             awardFileData = ''; awardFileType = ''; awardFileName = '';
-            window.regenerateAwardId();
         };
 
         window.toggleAwardSubsection = () => {
@@ -3351,7 +3330,6 @@
             if (!section) return;
             if (checked) {
                 section.classList.remove('hidden');
-                if (!document.getElementById('award-id-field').value) window.regenerateAwardId();
             } else {
                 section.classList.add('hidden');
                 resetAwardSubsection();
